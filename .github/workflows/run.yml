@@ -1,0 +1,22 @@
+name: Test Meteo Milano
+
+on:
+  workflow_dispatch: # Permette di avviarlo a mano con un pulsante
+
+jobs:
+  run-weather:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica repository
+        uses: actions/checkout@v4
+
+      - name: Configura Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installa librerie
+        run: pip install -r requirements.txt
+
+      - name: Esegui script
+        run: python main.py
