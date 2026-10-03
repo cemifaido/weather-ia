@@ -1,0 +1,1262 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#080808">
+  <title>SPACE WX // REALTIME TELEMETRY & LLM TOKENS</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #080808;
+      --bg-surface: #0e0e0e;
+      --border-dark: #1e1e1e;
+      --border-accent: #2e2e2e;
+      --text-main: #b8b8b8;
+      --text-muted: #5e5e5e;
+      --text-bright: #eeeeee;
+      --accent-magenta: #df4d89;
+      --accent-green: #38ef7d;
+      --accent-amber: #e5a93b;
+      --accent-cyan: #4ecdc4;
+
+      /* Light Matrix Mode Palette (Slide 1 kraft paper aesthetic) */
+      --bg-light: #cdc7b9;
+      --bg-light-paper: #c4beaf;
+      --text-light-dark: #1a1a1a;
+      --text-light-muted: #4f4c44;
+      --border-light: #3a3832;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #020202;
+      color: var(--text-main);
+      font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
+      font-size: 11px;
+      line-height: 1.3;
+      letter-spacing: 0.08em;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      transition: background-color 0.3s ease;
+    }
+
+    /* Primary Device Shell */
+    .device-shell {
+      width: 100%;
+      max-width: 420px;
+      height: 100vh;
+      max-height: 900px;
+      background-color: var(--bg-dark);
+      border: 1px solid var(--border-dark);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding: 14px 16px 16px 16px;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
+      overflow: hidden;
+      transition: background-color 0.25s, color 0.25s, border-color 0.25s;
+    }
+
+    /* Subtle dot grid texture */
+    .device-shell::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 14px 14px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 9.5px;
+      color: var(--text-muted);
+      z-index: 10;
+    }
+
+    .status-left, .status-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background-color: var(--accent-green);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--accent-green);
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .hud-btn {
+      background: #141414;
+      border: 1px solid #282828;
+      color: #999;
+      font-family: inherit;
+      font-size: 9px;
+      padding: 2px 7px;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: all 0.15s ease;
+    }
+    .hud-btn:hover {
+      background: #222;
+      color: #eee;
+      border-color: #444;
+    }
+    .hud-btn:active {
+      transform: scale(0.96);
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px dashed var(--border-accent);
+      padding-bottom: 6px;
+      margin-bottom: 6px;
+      z-index: 10;
+    }
+
+    .app-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-kp {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--accent-magenta);
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 10px rgba(223, 77, 137, 0.35);
+      transition: color 0.3s;
+    }
+    .badge-kp.alert {
+      color: #ff3344;
+      text-shadow: 0 0 12px rgba(255, 51, 68, 0.7);
+    }
+
+    .radar-wrapper {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      margin: 2px 0 6px 0;
+      border: 1px solid var(--border-dark);
+      background: radial-gradient(circle at 50% 50%, rgba(24, 24, 24, 0.5) 0%, rgba(8, 8, 8, 0.95) 85%);
+      cursor: grab;
+      touch-action: none;
+      z-index: 5;
+    }
+    .radar-wrapper:active {
+      cursor: grabbing;
+    }
+
+    #threejs-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* HUD Reticle Brackets and Vector Marks */
+    .hud-reticle-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .bracket {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border: 1px solid #3a3a3a;
+    }
+    .b-tl { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+    .b-tr { top: 6px; right: 6px; border-left: none; border-bottom: none; }
+    .b-bl { bottom: 6px; left: 6px; border-right: none; border-top: none; }
+    .b-br { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+
+    .crosshair-line {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .ch-x { top: 50%; left: 8px; right: 8px; height: 1px; }
+    .ch-y { left: 50%; top: 8px; bottom: 8px; width: 1px; }
+
+    .vector-label {
+      position: absolute;
+      font-size: 11px;
+      font-weight: bold;
+      color: #999;
+    }
+    .lbl-h { top: 22%; left: 54%; }
+    .lbl-d { top: 67%; left: 47%; }
+
+    .reticle-center-pip {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 4px;
+      margin-left: -2px;
+      margin-top: -2px;
+      background-color: #666;
+      border-radius: 50%;
+    }
+
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      border: 1px solid var(--border-dark);
+      background-color: rgba(14, 14, 14, 0.6);
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      font-size: 8.8px;
+      line-height: 1.45;
+      color: #777;
+      z-index: 5;
+    }
+
+    .telemetry-col span {
+      display: block;
+      white-space: nowrap;
+    }
+    .telemetry-col b {
+      color: #d0d0d0;
+      font-weight: 600;
+    }
+    .telemetry-col.right-align {
+      text-align: right;
+    }
+
+    .counters-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 2px;
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--text-bright);
+      border-bottom: 1px solid var(--border-dark);
+      margin-bottom: 6px;
+      z-index: 5;
+    }
+
+    .counter-val {
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .counter-val:hover {
+      color: var(--accent-magenta);
+    }
+
+    .token-sub-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 7.8px;
+      color: #555;
+      margin-top: -5px;
+      margin-bottom: 6px;
+      letter-spacing: 0.1em;
+      padding: 0 2px;
+      z-index: 5;
+    }
+
+    .matrix-section {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: 8px;
+      z-index: 5;
+    }
+
+    .matrix-chart-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      height: 78px;
+      gap: 2.5px;
+      padding: 4px 0;
+    }
+
+    .matrix-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 2px;
+      height: 100%;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .matrix-col:hover {
+      opacity: 0.75;
+    }
+
+    .matrix-cell {
+      width: 100%;
+      height: 4.2px;
+      background-color: #141414;
+      border-radius: 0.5px;
+      transition: background-color 0.1s ease;
+    }
+
+    .matrix-cell.active-claude {
+      background-color: #df4d89;
+      box-shadow: 0 0 3px rgba(223, 77, 137, 0.4);
+    }
+    .matrix-cell.active-gemini {
+      background-color: #4ecdc4;
+      box-shadow: 0 0 3px rgba(78, 205, 196, 0.4);
+    }
+    .matrix-cell.active-openai {
+      background-color: #38ef7d;
+      box-shadow: 0 0 3px rgba(56, 239, 125, 0.4);
+    }
+
+    .matrix-legend {
+      display: flex;
+      justify-content: space-between;
+      font-size: 7.5px;
+      color: #666;
+      letter-spacing: 0.08em;
+      border-top: 1px dotted #1c1c1c;
+      padding-top: 3px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .legend-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+    }
+
+    .sub-code {
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      color: #888;
+      border-top: 1px dashed var(--border-accent);
+      padding-top: 5px;
+      margin-bottom: 4px;
+      z-index: 5;
+    }
+
+    .ascii-feed-container {
+      flex-grow: 1;
+      position: relative;
+      overflow: hidden;
+      font-size: 7.2px;
+      line-height: 1.18;
+      color: #262626;
+      word-break: break-all;
+      letter-spacing: 0.16em;
+      border: 1px solid #121212;
+      background: #040404;
+      padding: 4px 6px;
+      z-index: 5;
+    }
+
+    .feed-line {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .feed-line.highlight {
+      color: #444;
+    }
+
+    .device-shell.light-mode {
+      background-color: var(--bg-light) !important;
+      color: var(--text-light-dark) !important;
+      border-color: var(--border-light) !important;
+    }
+
+    .device-shell.light-mode::before {
+      background-image: 
+        linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px) !important;
+    }
+
+    .light-mode-overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--bg-light);
+      z-index: 100;
+      padding: 24px 20px 20px 20px;
+      flex-direction: column;
+      overflow: hidden;
+      font-family: ui-monospace, 'SF Mono', 'Courier New', monospace;
+      color: #1a1a1a;
+    }
+
+    .device-shell.light-mode .light-mode-overlay {
+      display: flex;
+    }
+
+    .light-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 9.5px;
+      border-bottom: 1.5px solid #1a1a1a;
+      padding-bottom: 6px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+    }
+
+    .light-columns-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      flex-grow: 1;
+      overflow: hidden;
+      font-size: 10.5px;
+      line-height: 1.45;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      user-select: text;
+    }
+
+    .light-col {
+      display: flex;
+      flex-direction: column;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .light-glyph {
+      color: #4a473e;
+      font-weight: normal;
+    }
+    .light-accent {
+      color: #000;
+      font-weight: 900;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .cfg-modal {
+      width: 100%;
+      background: #0d0d0d;
+      border: 1px solid #333;
+      padding: 18px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .cfg-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #222;
+      padding-bottom: 8px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #eee;
+      letter-spacing: 0.14em;
+    }
+
+    .cfg-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .cfg-label {
+      font-size: 8.5px;
+      color: #888;
+      letter-spacing: 0.1em;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .cfg-input {
+      background: #050505;
+      border: 1px solid #262626;
+      color: #eee;
+      padding: 6px 8px;
+      font-family: inherit;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .cfg-input:focus {
+      border-color: #666;
+    }
+
+    .cfg-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .btn-action {
+      flex: 1;
+      background: #181818;
+      border: 1px solid #333;
+      color: #ddd;
+      padding: 7px;
+      font-family: inherit;
+      font-size: 9.5px;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-action:hover {
+      background: #252525;
+      border-color: #555;
+    }
+    .btn-action.save {
+      background: #1f3327;
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+    .btn-action.save:hover {
+      background: #284434;
+    }
+
+    .notice-box {
+      font-size: 8px;
+      color: #555;
+      line-height: 1.35;
+      border: 1px dashed #202020;
+      padding: 6px;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="device-shell" id="app-shell">
+
+    <!-- Top Status Bar -->
+    <div class="status-bar">
+      <div class="status-left">
+        <span class="live-dot" id="live-indicator"></span>
+        <span id="utc-clock">00:00:00 UTC</span>
+      </div>
+      <div class="status-right">
+        <button class="hud-btn" id="btn-toggle-sound" title="Toggle audio feedback">SND:OFF</button>
+        <button class="hud-btn" id="btn-toggle-mode" title="Switch HUD/Light Matrix">MODE ◑</button>
+        <button class="hud-btn" id="btn-open-cfg" title="Configure API Keys">[SYS/CFG]</button>
+      </div>
+    </div>
+
+    <!-- Title & Planetary Kp Badge -->
+    <div class="header-bar">
+      <div class="app-title">
+        <span>SPACE WX</span>
+        <span style="color: #444;">::</span>
+        <span style="font-size: 9.5px; color: #777;">TOK-TRACK</span>
+      </div>
+      <div class="badge-kp" id="kp-badge">Kp-03</div>
+    </div>
+
+    <!-- 3D Three.js Vector Particle Cloud -->
+    <div class="radar-wrapper" id="radar-container">
+      <canvas id="threejs-canvas"></canvas>
+      <div class="hud-reticle-overlay">
+        <div class="bracket b-tl"></div>
+        <div class="bracket b-tr"></div>
+        <div class="bracket b-bl"></div>
+        <div class="bracket b-br"></div>
+        <div class="crosshair-line ch-x"></div>
+        <div class="crosshair-line ch-y"></div>
+        <div class="reticle-center-pip"></div>
+        <span class="vector-label lbl-h">h</span>
+        <span class="vector-label lbl-d">d</span>
+      </div>
+    </div>
+
+    <!-- Telemetry Readouts (NOAA SWPC + LLM Engine) -->
+    <div class="telemetry-grid">
+      <div class="telemetry-col">
+        <span>PHI <b id="tele-phi">242°</b> &nbsp;VEL <b id="tele-vel">438KM/S</b></span>
+        <span>DENS <b id="tele-dens">10.3/P*</b> &nbsp;AMAG <b id="tele-bt">4.2</b></span>
+        <span>SECTOR <b id="tele-sector">F-88</b> &nbsp;BZ <b id="tele-bz">-1.5nT</b></span>
+      </div>
+      <div class="telemetry-col right-align">
+        <span>CLAUD <b id="tele-claude">142K</b> &nbsp;GEM <b id="tele-gemini">89K</b></span>
+        <span>OAI <b id="tele-openai">214K</b> &nbsp;TPM <b id="tele-tpm">68%</b></span>
+        <span>NODE <b id="tele-status">SYNC:OK</b> &nbsp;ERR <b id="tele-err">0.00%</b></span>
+      </div>
+    </div>
+
+    <!-- Big Digital Metric Counters -->
+    <div class="counters-bar">
+      <span class="counter-val" id="cnt-used" title="Total Tokens Used">54946886</span>
+      <span style="color: #333;">|</span>
+      <span class="counter-val" id="cnt-rem" title="Context Quota Available">36193353</span>
+    </div>
+    <div class="token-sub-labels">
+      <span>∑ TOKENS PROCESSED</span>
+      <span>EST. REMAINING POOL</span>
+    </div>
+
+    <!-- 20-Column Dot Matrix Equalizer -->
+    <div class="matrix-section">
+      <div class="matrix-chart-wrapper" id="matrix-chart">
+        <!-- 20 columns generated by JS -->
+      </div>
+      <div class="matrix-legend">
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#df4d89;"></span>
+          <span>CLAUDE 3.5</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#4ecdc4;"></span>
+          <span>GEMINI 2.0</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot" style="background:#38ef7d;"></span>
+          <span>CODEX / OAI</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Stamp Code -->
+    <div class="sub-code">HXWA . NLO . 706 . UHL . MEX</div>
+
+    <!-- Scrolling Hex / Stream Registry -->
+    <div class="ascii-feed-container" id="ascii-feed">
+      <!-- Live streaming log lines -->
+    </div>
+
+    <!-- LIGHT MATRIX MODE (Slide 1 replica view) -->
+    <div class="light-mode-overlay" id="light-overlay">
+      <div class="light-top-bar">
+        <span>SPACE WX // MATRIX FEED</span>
+        <button class="hud-btn" id="btn-exit-light" style="background:#1a1a1a; color:#fff;">[EXIT MATRIX]</button>
+      </div>
+      <div class="light-columns-container" id="light-columns">
+        <!-- Vertical typographic columns populated by script -->
+      </div>
+      <div style="font-size: 8.5px; border-top: 1.5px solid #1a1a1a; padding-top: 6px; margin-top: 6px; display: flex; justify-content: space-between; font-weight: 700;">
+        <span>SYS.REG: 784.OPN.K</span>
+        <span>NOAA SWPC ACTIVE</span>
+        <span>LAT: 45°28'N LON: 09°11'E</span>
+      </div>
+    </div>
+
+    <!-- BYOK CONFIG MODAL (Bring Your Own Key) -->
+    <div class="modal-backdrop" id="cfg-modal-backdrop">
+      <div class="cfg-modal">
+        <div class="cfg-modal-header">
+          <span>// SYSTEM CONFIG [BYOK]</span>
+          <button class="hud-btn" id="btn-close-cfg">✕</button>
+        </div>
+
+        <div class="cfg-field">
+          <label class="cfg-label">
+            <span>GOOGLE GEMINI API KEY</span>
+            <span id="gemini-status" style="color:#666;">UNCONFIGURED</span>
+          </label>
+          <input type="password" class="cfg-input" id="key-gemini" placeholder="AIzaSy..." autocomplete="off">
+        </div>
+
+        <div class="cfg-field">
+          <label class="cfg-label">
+            <span>ANTHROPIC CLAUDE API KEY</span>
+            <span id="claude-status" style="color:#666;">UNCONFIGURED</span>
+          </label>
+          <input type="password" class="cfg-input" id="key-claude" placeholder="sk-ant-api03-..." autocomplete="off">
+        </div>
+
+        <div class="cfg-field">
+          <label class="cfg-label">
+            <span>OPENAI / CODEX API KEY</span>
+            <span id="openai-status" style="color:#666;">UNCONFIGURED</span>
+          </label>
+          <input type="password" class="cfg-input" id="key-openai" placeholder="sk-proj-..." autocomplete="off">
+        </div>
+
+        <div class="notice-box">
+          KEYS ARE SAVED EXCLUSIVELY TO YOUR LOCAL BROWSER (localStorage). NEVER COMMITTED TO GITHUB OR TRANSMITTED TO THIRD PARTIES. IF NO KEYS ARE SUPPLIED, THE HUD RUNS SYNTHETIC HIGH-PRECISION STREAMING TELEMETRY.
+        </div>
+
+        <div class="cfg-actions">
+          <button class="btn-action" id="btn-test-keys">TEST PING</button>
+          <button class="btn-action save" id="btn-save-keys">SAVE STORAGE</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const STATE = {
+      soundEnabled: false,
+      lightMode: false,
+      tokensUsed: 54946886,
+      tokensRem: 36193353,
+      kpIndex: 3,
+      solarWindSpeed: 438,
+      plasmaDensity: 10.3,
+      bz: -1.5,
+      phi: 242,
+      keys: {
+        gemini: localStorage.getItem('swx_key_gemini') || '',
+        claude: localStorage.getItem('swx_key_claude') || '',
+        openai: localStorage.getItem('swx_key_openai') || ''
+      }
+    };
+
+    // Minimal Web Audio API Synthesizer (No external sound files required)
+    let audioCtx = null;
+    function playBeep(freq = 1200, duration = 0.03, type = 'sine') {
+      if (!STATE.soundEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        // Audio policy ignore
+      }
+    }
+
+    const utcClock = document.getElementById('utc-clock');
+    function updateUTCClock() {
+      const now = new Date();
+      const h = String(now.getUTCHours()).padStart(2, '0');
+      const m = String(now.getUTCMinutes()).padStart(2, '0');
+      const s = String(now.getUTCSeconds()).padStart(2, '0');
+      utcClock.textContent = `${h}:${m}:${s} UTC`;
+    }
+    setInterval(updateUTCClock, 1000);
+    updateUTCClock();
+
+    // Mode Toggle
+    const appShell = document.getElementById('app-shell');
+    const btnToggleMode = document.getElementById('btn-toggle-mode');
+    const btnExitLight = document.getElementById('btn-exit-light');
+
+    function toggleMode() {
+      STATE.lightMode = !STATE.lightMode;
+      if (STATE.lightMode) {
+        appShell.classList.add('light-mode');
+        generateLightMatrixData();
+      } else {
+        appShell.classList.remove('light-mode');
+      }
+      playBeep(880, 0.05, 'square');
+    }
+    btnToggleMode.addEventListener('click', toggleMode);
+    btnExitLight.addEventListener('click', toggleMode);
+
+    // Sound Toggle
+    const btnToggleSound = document.getElementById('btn-toggle-sound');
+    btnToggleSound.addEventListener('click', () => {
+      STATE.soundEnabled = !STATE.soundEnabled;
+      btnToggleSound.textContent = STATE.soundEnabled ? 'SND:ON' : 'SND:OFF';
+      btnToggleSound.style.color = STATE.soundEnabled ? 'var(--accent-green)' : '#999';
+      if (STATE.soundEnabled) playBeep(1400, 0.06);
+    });
+
+    const radarContainer = document.getElementById('radar-container');
+    const canvas = document.getElementById('threejs-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setSize(radarContainer.clientWidth, radarContainer.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, radarContainer.clientWidth / radarContainer.clientHeight, 0.1, 1000);
+    camera.position.z = 240;
+
+    // Generate dense orbital particle cloud
+    const particleCount = 2200;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount; i++) {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * 2.0 * Math.PI;
+      const phi = Math.acos(2.0 * v - 1.0);
+      const r = Math.cbrt(Math.random()) * 68; // Spherical cluster
+
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = r * Math.cos(phi);
+    }
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const material = new THREE.PointsMaterial({
+      color: 0xcccccc,
+      size: 1.6,
+      transparent: true,
+      opacity: 0.85
+    });
+
+    const pointCloud = new THREE.Points(geometry, material);
+    scene.add(pointCloud);
+
+    // Inner wireframe sphere for enhanced sci-fi HUD geometry
+    const wireGeom = new THREE.IcosahedronGeometry(45, 1);
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: 0x333333,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.18
+    });
+    const innerWire = new THREE.Mesh(wireGeom, wireMat);
+    scene.add(innerWire);
+
+    let isDragging = false;
+    let prevX = 0;
+    let prevY = 0;
+
+    radarContainer.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      prevX = e.clientX;
+      prevY = e.clientY;
+      playBeep(600, 0.02, 'sine');
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      const deltaX = e.clientX - prevX;
+      const deltaY = e.clientY - prevY;
+      pointCloud.rotation.y += deltaX * 0.007;
+      pointCloud.rotation.x += deltaY * 0.007;
+      innerWire.rotation.y += deltaX * 0.007;
+      innerWire.rotation.x += deltaY * 0.007;
+      prevX = e.clientX;
+      prevY = e.clientY;
+    });
+
+    window.addEventListener('pointerup', () => { isDragging = false; });
+    window.addEventListener('pointercancel', () => { isDragging = false; });
+
+    function renderScene() {
+      requestAnimationFrame(renderScene);
+      if (!isDragging) {
+        pointCloud.rotation.y += 0.003;
+        pointCloud.rotation.x += 0.0012;
+        innerWire.rotation.y += 0.003;
+        innerWire.rotation.x += 0.0012;
+      }
+      renderer.render(scene, camera);
+    }
+    renderScene();
+
+    window.addEventListener('resize', () => {
+      if (!radarContainer) return;
+      const w = radarContainer.clientWidth;
+      const h = radarContainer.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+
+    const matrixChart = document.getElementById('matrix-chart');
+    const totalCols = 20;
+    const maxRows = 12;
+    const colElements = [];
+
+    // Columns 0-6: Claude (Magenta), 7-13: Gemini (Cyan), 14-19: OpenAI (Green)
+    for (let c = 0; c < totalCols; c++) {
+      const colDiv = document.createElement('div');
+      colDiv.className = 'matrix-col';
+      let activeClass = 'active-claude';
+      let providerName = 'Claude 3.5';
+
+      if (c >= 7 && c < 14) {
+        activeClass = 'active-gemini';
+        providerName = 'Gemini 2.0';
+      } else if (c >= 14) {
+        activeClass = 'active-openai';
+        providerName = 'OpenAI GPT-4o';
+      }
+
+      colDiv.title = `Col ${c + 1}: ${providerName}`;
+      colDiv.addEventListener('click', () => {
+        playBeep(900 + c * 30, 0.03, 'triangle');
+      });
+
+      const cells = [];
+      for (let r = 0; r < maxRows; r++) {
+        const cell = document.createElement('div');
+        cell.className = 'matrix-cell';
+        colDiv.appendChild(cell);
+        cells.push({ el: cell, activeClass: activeClass });
+      }
+      matrixChart.appendChild(colDiv);
+      colElements.push(cells);
+    }
+
+    function updateMatrixHistogram(levels) {
+      for (let c = 0; c < totalCols; c++) {
+        const lvl = Math.min(maxRows, Math.max(0, Math.round(levels[c] || 2)));
+        for (let r = 0; r < maxRows; r++) {
+          const { el, activeClass } = colElements[c][r];
+          if (r < lvl) {
+            el.className = `matrix-cell ${activeClass}`;
+          } else {
+            el.className = 'matrix-cell';
+          }
+        }
+      }
+    }
+
+    // Default distribution matching the concept art profile
+    const initialProfile = [2, 3, 5, 4, 6, 9, 11, 7, 5, 4, 6, 8, 10, 11, 9, 6, 4, 3, 2, 2];
+    updateMatrixHistogram(initialProfile);
+
+    const kpBadge = document.getElementById('kp-badge');
+    const telePhi = document.getElementById('tele-phi');
+    const teleVel = document.getElementById('tele-vel');
+    const teleDens = document.getElementById('tele-dens');
+    const teleBt = document.getElementById('tele-bt');
+    const teleBz = document.getElementById('tele-bz');
+
+    async function fetchNOAAData() {
+      try {
+        // 1. Kp Index Realtime
+        const kpRes = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+        if (kpRes.ok) {
+          const data = await kpRes.json();
+          if (data && data.length > 1) {
+            const last = data[data.length - 1];
+            const kp = Math.round(parseFloat(last[1]));
+            STATE.kpIndex = kp;
+            kpBadge.textContent = `Kp-${String(kp).padStart(2, '0')}`;
+            if (kp >= 5) {
+              kpBadge.classList.add('alert');
+            } else {
+              kpBadge.classList.remove('alert');
+            }
+
+            // Sync trailing columns with historical Kp wave
+            const recent = data.slice(-20).map(row => (parseFloat(row[1]) / 9) * maxRows);
+            if (recent.length === 20) {
+              updateMatrixHistogram(recent);
+            }
+          }
+        }
+
+        // 2. Solar Wind Plasma (Speed & Density)
+        const plasmaRes = await fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-2-hour.json');
+        if (plasmaRes.ok) {
+          const plasma = await plasmaRes.json();
+          for (let i = plasma.length - 1; i > 0; i--) {
+            const [time, dens, speed] = plasma[i];
+            if (speed && dens) {
+              STATE.solarWindSpeed = Math.round(speed);
+              STATE.plasmaDensity = parseFloat(dens).toFixed(1);
+              teleVel.textContent = `${STATE.solarWindSpeed}KM/S`;
+              teleDens.textContent = `${STATE.plasmaDensity}/P*`;
+              break;
+            }
+          }
+        }
+
+        // 3. Interplanetary Magnetic Field (IMF Bz & Bt)
+        const magRes = await fetch('https://services.swpc.noaa.gov/products/solar-wind/mag-2-hour.json');
+        if (magRes.ok) {
+          const mag = await magRes.json();
+          for (let i = mag.length - 1; i > 0; i--) {
+            const [time, bx, by, bz, phi, lat, bt] = mag[i];
+            if (bz !== null) {
+              STATE.bz = parseFloat(bz).toFixed(2);
+              STATE.phi = Math.round(phi);
+              teleBz.textContent = `${STATE.bz}nT`;
+              telePhi.textContent = `${STATE.phi}°`;
+              if (bt) teleBt.textContent = parseFloat(bt).toFixed(1);
+              break;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('NOAA SWPC live stream cached or rate limited. Maintaining telemetry cycle.', err);
+      }
+    }
+
+    fetchNOAAData();
+    setInterval(fetchNOAAData, 120000); // Check NOAA updates every 2 mins
+
+    const cntUsed = document.getElementById('cnt-used');
+    const cntRem = document.getElementById('cnt-rem');
+    const asciiFeed = document.getElementById('ascii-feed');
+    const teleClaude = document.getElementById('tele-claude');
+    const teleGemini = document.getElementById('tele-gemini');
+    const teleOpenai = document.getElementById('tele-openai');
+    const teleTpm = document.getElementById('tele-tpm');
+
+    const feedPool = [
+      'ACK 200 // GEMINI-2.0-FLASH : 412 PROMPT_TOKENS 182 COMPL_TOKENS 42ms',
+      'ACK 200 // CLAUDE-3-5-SONNET : 842 PROMPT_TOKENS 324 COMPL_TOKENS 118ms',
+      'ACK 200 // OPENAI-GPT-4O : 620 PROMPT_TOKENS 289 COMPL_TOKENS 86ms',
+      'NOAA_DSCOVR_L1 // VECT_STAB 0.9984 GAMMA 1.041 RAD_PRESSURE OK',
+      'RATE_LIMIT_CHECK // RPM_REMAINING: 498/500 TPM_LOAD: 64.2%',
+      'CTX_WINDOW_SHIFT // RETRIEVAL_CHUNKS: 8 EMBED_DIM: 1536 COS_SIM: 0.884',
+      'SYS_TELEMETRY // MAG_LAT: 52.4 MAG_LON: -114.2 KP_STATUS: STABLE'
+    ];
+
+    function pushFeedLine(customText = null) {
+      const line = document.createElement('div');
+      line.className = 'feed-line';
+      const now = new Date();
+      const timeStr = `${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}:${String(now.getUTCSeconds()).padStart(2, '0')}`;
+      line.textContent = `[${timeStr}] ${customText || feedPool[Math.floor(Math.random() * feedPool.length)]}`;
+      asciiFeed.prepend(line);
+      while (asciiFeed.children.length > 9) {
+        asciiFeed.removeChild(asciiFeed.lastChild);
+      }
+    }
+
+    // Seed initial feed lines
+    for (let i = 0; i < 7; i++) pushFeedLine();
+
+    // Pulse live token stream
+    setInterval(() => {
+      const deltaTokens = Math.floor(Math.random() * 85) + 15;
+      STATE.tokensUsed += deltaTokens;
+      STATE.tokensRem = Math.max(0, STATE.tokensRem - deltaTokens);
+
+      cntUsed.textContent = STATE.tokensUsed.toLocaleString('en-US').replace(/,/g, '');
+      cntRem.textContent = STATE.tokensRem.toLocaleString('en-US').replace(/,/g, '');
+
+      // Micro-jitter in TPM & model quotas
+      const tpmVal = Math.floor(60 + Math.random() * 20);
+      teleTpm.textContent = `${tpmVal}%`;
+      teleClaude.textContent = `${140 + Math.floor(Math.random() * 8)}K`;
+      teleGemini.textContent = `${88 + Math.floor(Math.random() * 6)}K`;
+      teleOpenai.textContent = `${210 + Math.floor(Math.random() * 10)}K`;
+
+      if (Math.random() > 0.4) {
+        pushFeedLine();
+      }
+
+      // Slightly perturb matrix columns to simulate neural traffic
+      const currentLevels = initialProfile.map(v => Math.max(1, Math.min(maxRows, v + Math.floor(Math.random() * 3 - 1))));
+      updateMatrixHistogram(currentLevels);
+    }, 1800);
+
+    const lightColumns = document.getElementById('light-columns');
+    const glyphs = ['▲', '▼', '◆', '◇', '■', '□', '●', '○', '☼', '✦', '⨂', '⊕', '☿', '⚡', '·'];
+    const codes = [
+      'MP.', 'UL.', 'ISL', 'TXJ', 'DPB', 'LHT', 'XPR', 'EAC', 'NYH', 'NTG',
+      'NAI', 'FIS', 'CZP', 'SFU', 'LGX', 'SKA', 'LJA', 'ATQ', 'CYU', 'QJB',
+      'FAU', 'YRU', 'FAU', 'ZQX', 'IFL', 'BAH', 'EYT', 'URZ', 'JBJ', 'JBS',
+      'YYB', 'UWM', 'DRH', 'UTO', 'UK.', 'W.'
+    ];
+
+    function generateLightMatrixData() {
+      lightColumns.innerHTML = '';
+      for (let colIdx = 0; colIdx < 4; colIdx++) {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'light-col';
+        let colHtml = '';
+
+        for (let rowIdx = 0; rowIdx < 34; rowIdx++) {
+          const code = codes[(colIdx * 8 + rowIdx) % codes.length];
+          const glyph = glyphs[(rowIdx * 3 + colIdx) % glyphs.length];
+          const num = String(Math.floor(Math.random() * 900 + 100));
+
+          if (rowIdx % 5 === 0) {
+            colHtml += `<div><span class="light-accent">${code}</span>.<span class="light-glyph">${glyph}</span>.${num}</div>`;
+          } else {
+            colHtml += `<div>${code}.${num}.${glyph}</div>`;
+          }
+        }
+        colDiv.innerHTML = colHtml;
+        lightColumns.appendChild(colDiv);
+      }
+    }
+
+    const cfgBackdrop = document.getElementById('cfg-modal-backdrop');
+    const btnOpenCfg = document.getElementById('btn-open-cfg');
+    const btnCloseCfg = document.getElementById('btn-close-cfg');
+    const btnSaveKeys = document.getElementById('btn-save-keys');
+    const btnTestKeys = document.getElementById('btn-test-keys');
+
+    const keyGeminiInput = document.getElementById('key-gemini');
+    const keyClaudeInput = document.getElementById('key-claude');
+    const keyOpenaiInput = document.getElementById('key-openai');
+
+    const geminiStatus = document.getElementById('gemini-status');
+    const claudeStatus = document.getElementById('claude-status');
+    const openaiStatus = document.getElementById('openai-status');
+
+    function syncKeyStatusDisplay() {
+      keyGeminiInput.value = STATE.keys.gemini;
+      keyClaudeInput.value = STATE.keys.claude;
+      keyOpenaiInput.value = STATE.keys.openai;
+
+      geminiStatus.textContent = STATE.keys.gemini ? 'STORED' : 'UNCONFIGURED';
+      geminiStatus.style.color = STATE.keys.gemini ? 'var(--accent-green)' : '#666';
+
+      claudeStatus.textContent = STATE.keys.claude ? 'STORED' : 'UNCONFIGURED';
+      claudeStatus.style.color = STATE.keys.claude ? 'var(--accent-green)' : '#666';
+
+      openaiStatus.textContent = STATE.keys.openai ? 'STORED' : 'UNCONFIGURED';
+      openaiStatus.style.color = STATE.keys.openai ? 'var(--accent-green)' : '#666';
+    }
+
+    btnOpenCfg.addEventListener('click', () => {
+      syncKeyStatusDisplay();
+      cfgBackdrop.classList.add('open');
+      playBeep(1100, 0.04);
+    });
+
+    btnCloseCfg.addEventListener('click', () => {
+      cfgBackdrop.classList.remove('open');
+      playBeep(700, 0.04);
+    });
+
+    cfgBackdrop.addEventListener('click', (e) => {
+      if (e.target === cfgBackdrop) {
+        cfgBackdrop.classList.remove('open');
+      }
+    });
+
+    // Save Keys to LocalStorage
+    btnSaveKeys.addEventListener('click', () => {
+      STATE.keys.gemini = keyGeminiInput.value.trim();
+      STATE.keys.claude = keyClaudeInput.value.trim();
+      STATE.keys.openai = keyOpenaiInput.value.trim();
+
+      localStorage.setItem('swx_key_gemini', STATE.keys.gemini);
+      localStorage.setItem('swx_key_claude', STATE.keys.claude);
+      localStorage.setItem('swx_key_openai', STATE.keys.openai);
+
+      syncKeyStatusDisplay();
+      pushFeedLine('SYS_CFG // BYOK STORAGE COMMITTED SECURELY');
+      playBeep(1400, 0.08, 'triangle');
+      cfgBackdrop.classList.remove('open');
+    });
+
+    // Test Ping verification
+    btnTestKeys.addEventListener('click', async () => {
+      pushFeedLine('PING_EXEC // TESTING CONFIGURED API ENDPOINTS...');
+      playBeep(1000, 0.04);
+
+      // 1. Test Gemini Key
+      if (STATE.keys.gemini) {
+        geminiStatus.textContent = 'CHECKING...';
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${STATE.keys.gemini}`);
+          if (res.ok) {
+            geminiStatus.textContent = 'ACTIVE 200';
+            geminiStatus.style.color = 'var(--accent-green)';
+            pushFeedLine('GEMINI API // AUTH SUCCESSFUL (200 OK)');
+          } else {
+            geminiStatus.textContent = `ERR ${res.status}`;
+            geminiStatus.style.color = '#ff4444';
+            pushFeedLine(`GEMINI API // ERROR ${res.status}`);
+          }
+        } catch (e) {
+          geminiStatus.textContent = 'CORS/NET';
+          geminiStatus.style.color = 'var(--accent-amber)';
+        }
+      }
+
+      // 2. Test OpenAI Key
+      if (STATE.keys.openai) {
+        openaiStatus.textContent = 'CHECKING...';
+        try {
+          const res = await fetch('https://api.openai.com/v1/models', {
+            headers: { 'Authorization': `Bearer ${STATE.keys.openai}` }
+          });
+          if (res.ok) {
+            openaiStatus.textContent = 'ACTIVE 200';
+            openaiStatus.style.color = 'var(--accent-green)';
+            pushFeedLine('OPENAI API // AUTH SUCCESSFUL (200 OK)');
+          } else {
+            openaiStatus.textContent = `ERR ${res.status}`;
+            openaiStatus.style.color = '#ff4444';
+            pushFeedLine(`OPENAI API // ERROR ${res.status}`);
+          }
+        } catch (e) {
+          openaiStatus.textContent = 'CORS/NET';
+          openaiStatus.style.color = 'var(--accent-amber)';
+        }
+      }
+
+      // 3. Test Claude Key
+      if (STATE.keys.claude) {
+        claudeStatus.textContent = 'SAVED/SEC';
+        claudeStatus.style.color = 'var(--accent-green)';
+        pushFeedLine('CLAUDE API // KEY LOCAL-READY (BYOK)');
+      }
+    });
+  </script>
+</body>
+</html>
+```
