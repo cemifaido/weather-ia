@@ -6,29 +6,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#080808">
-  <title>SPACE WX // REALTIME TELEMETRY & LLM TOKENS</title>
+  <meta name="theme-color" content="#070707">
+  <title>SPACE WX // TELEMETRY &amp; TOKEN HUD</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     :root {
-      --bg-dark: #080808;
-      --bg-surface: #0e0e0e;
-      --border-dark: #1e1e1e;
-      --border-accent: #2e2e2e;
-      --text-main: #b8b8b8;
-      --text-muted: #5e5e5e;
-      --text-bright: #eeeeee;
-      --accent-magenta: #df4d89;
-      --accent-green: #38ef7d;
-      --accent-amber: #e5a93b;
-      --accent-cyan: #4ecdc4;
+      /* OLED Dark HUD Theme (Slide 2) */
+      --oled-bg: #070707;
+      --oled-surface: #0e0e0e;
+      --oled-card: #121212;
+      --oled-border: #1f1f1f;
+      --oled-border-accent: #2e2e2e;
+      --oled-text: #b5b5b5;
+      --oled-muted: #5e5e5e;
+      --oled-bright: #efefef;
+      --oled-magenta: #df4d89;
+      --oled-magenta-glow: rgba(223, 77, 137, 0.45);
+      --oled-storm: #ff3344;
+      --oled-green: #38ef7d;
+      --oled-amber: #e8a938;
+      --oled-cyan: #4ecdc4;
 
-      /* Light Matrix Mode Palette (Slide 1 kraft paper aesthetic) */
-      --bg-light: #cdc7b9;
-      --bg-light-paper: #c4beaf;
-      --text-light-dark: #1a1a1a;
-      --text-light-muted: #4f4c44;
-      --border-light: #3a3832;
+      /* Kraft Paper Matrix Theme (Slide 1) */
+      --kraft-bg: #cdc7b9;
+      --kraft-card: #c5bea8;
+      --kraft-dark: #121212;
+      --kraft-muted: #524f46;
+      --kraft-border: #2a2822;
+      --kraft-grid: rgba(0, 0, 0, 0.05);
+
+      --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
     }
 
     * {
@@ -40,149 +47,172 @@
     }
 
     body {
-      background-color: #020202;
-      color: var(--text-main);
-      font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'Courier New', monospace;
+      background-color: #030303;
+      color: var(--oled-text);
+      font-family: var(--font-mono);
       font-size: 11px;
-      line-height: 1.3;
+      line-height: 1.25;
       letter-spacing: 0.08em;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      padding: 10px;
+    }
+
+    .master-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 960px;
+    }
+
+    .master-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 860px;
+      background: #0d0d0d;
+      border: 1px solid #222;
+      padding: 7px 12px;
+      border-radius: 4px;
+      color: #999;
+      font-size: 9.5px;
+      z-index: 60;
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .nav-btn {
+      background: #161616;
+      border: 1px solid #333;
+      color: #aaa;
+      padding: 4px 9px;
+      font-family: inherit;
+      font-size: 9px;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      transition: all 0.15s ease;
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+    .nav-btn:hover {
+      background: #242424;
+      color: #fff;
+      border-color: #555;
+    }
+    .nav-btn.active {
+      background: var(--oled-magenta);
+      color: #fff;
+      border-color: var(--oled-magenta);
+      font-weight: 700;
+    }
+
+    .screens-stage {
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      overflow: hidden;
-      transition: background-color 0.3s ease;
+      gap: 24px;
+      width: 100%;
+      transition: all 0.3s ease;
     }
 
-    /* Primary Device Shell */
-    .device-shell {
+    .handheld-device {
       width: 100%;
-      max-width: 420px;
-      height: 100vh;
-      max-height: 900px;
-      background-color: var(--bg-dark);
-      border: 1px solid var(--border-dark);
+      max-width: 412px;
+      height: 870px;
+      position: relative;
+      border-radius: 46px;
+      padding: 16px 18px 22px 18px;
+      box-shadow: 0 0 0 10px #1a1a1a, 0 30px 70px rgba(0, 0, 0, 0.98);
       display: flex;
       flex-direction: column;
-      position: relative;
-      padding: 14px 16px 16px 16px;
-      box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
       overflow: hidden;
-      transition: background-color 0.25s, color 0.25s, border-color 0.25s;
+      flex-shrink: 0;
+      transition: transform 0.25s ease, opacity 0.25s ease;
     }
 
-    /* Subtle dot grid texture */
-    .device-shell::before {
-      content: '';
+    .dynamic-island {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-image: 
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-      background-size: 14px 14px;
+      top: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 108px;
+      height: 24px;
+      background-color: #000;
+      border-radius: 14px;
+      z-index: 100;
       pointer-events: none;
-      z-index: 1;
     }
 
-    .status-bar {
+    .device-status-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
+      margin-top: 18px;
+      margin-bottom: 8px;
       font-size: 9.5px;
-      color: var(--text-muted);
-      z-index: 10;
+      font-weight: 700;
+      z-index: 20;
     }
 
-    .status-left, .status-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .theme-oled {
+      background-color: var(--oled-bg);
+      color: var(--oled-text);
+      border: 1px solid #1c1c1c;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 14px 14px;
     }
 
-    .live-dot {
-      display: inline-block;
-      width: 6px;
-      height: 6px;
-      background-color: var(--accent-green);
-      border-radius: 50%;
-      box-shadow: 0 0 6px var(--accent-green);
-      animation: pulse 2s infinite ease-in-out;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
-    }
-
-    .hud-btn {
-      background: #141414;
-      border: 1px solid #282828;
-      color: #999;
-      font-family: inherit;
-      font-size: 9px;
-      padding: 2px 7px;
-      cursor: pointer;
-      letter-spacing: 0.06em;
-      transition: all 0.15s ease;
-    }
-    .hud-btn:hover {
-      background: #222;
-      color: #eee;
-      border-color: #444;
-    }
-    .hud-btn:active {
-      transform: scale(0.96);
-    }
-
-    .header-bar {
+    .oled-header-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px dashed var(--border-accent);
+      border-bottom: 1px dashed var(--oled-border-accent);
       padding-bottom: 6px;
       margin-bottom: 6px;
-      z-index: 10;
     }
-
-    .app-title {
+    .oled-main-title {
       font-size: 13.5px;
       font-weight: 700;
       letter-spacing: 0.16em;
-      color: var(--text-bright);
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      color: var(--oled-bright);
     }
-
-    .badge-kp {
-      font-size: 13.5px;
+    .oled-kp-tag {
+      font-size: 13px;
       font-weight: 800;
-      color: var(--accent-magenta);
-      letter-spacing: 0.08em;
-      text-shadow: 0 0 10px rgba(223, 77, 137, 0.35);
-      transition: color 0.3s;
+      color: var(--oled-magenta);
+      letter-spacing: 0.06em;
+      text-shadow: 0 0 8px var(--oled-magenta-glow);
+      transition: color 0.3s, text-shadow 0.3s;
     }
-    .badge-kp.alert {
-      color: #ff3344;
-      text-shadow: 0 0 12px rgba(255, 51, 68, 0.7);
+    .oled-kp-tag.storm {
+      color: var(--oled-storm);
+      text-shadow: 0 0 12px rgba(255, 51, 68, 0.85);
     }
 
-    .radar-wrapper {
+    .radar-viewport {
       position: relative;
       width: 100%;
-      height: 220px;
+      height: 228px;
       margin: 2px 0 6px 0;
-      border: 1px solid var(--border-dark);
-      background: radial-gradient(circle at 50% 50%, rgba(24, 24, 24, 0.5) 0%, rgba(8, 8, 8, 0.95) 85%);
+      border: 1px solid var(--oled-border);
+      background: radial-gradient(circle at 50% 50%, rgba(24, 24, 24, 0.6) 0%, rgba(7, 7, 7, 0.98) 86%);
       cursor: grab;
       touch-action: none;
-      z-index: 5;
     }
-    .radar-wrapper:active {
+    .radar-viewport:active {
       cursor: grabbing;
     }
 
@@ -192,8 +222,7 @@
       display: block;
     }
 
-    /* HUD Reticle Brackets and Vector Marks */
-    .hud-reticle-overlay {
+    .hud-brackets-overlay {
       position: absolute;
       top: 0;
       left: 0;
@@ -202,122 +231,82 @@
       pointer-events: none;
     }
 
-    .bracket {
+    .hud-bracket {
       position: absolute;
       width: 14px;
       height: 14px;
-      border: 1px solid #3a3a3a;
+      border: 1px solid #3c3c3c;
     }
-    .b-tl { top: 6px; left: 6px; border-right: none; border-bottom: none; }
-    .b-tr { top: 6px; right: 6px; border-left: none; border-bottom: none; }
-    .b-bl { bottom: 6px; left: 6px; border-right: none; border-top: none; }
-    .b-br { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+    .br-tl { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+    .br-tr { top: 6px; right: 6px; border-left: none; border-bottom: none; }
+    .br-bl { bottom: 6px; left: 6px; border-right: none; border-top: none; }
+    .br-br { bottom: 6px; right: 6px; border-left: none; border-top: none; }
 
-    .crosshair-line {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.08);
-    }
-    .ch-x { top: 50%; left: 8px; right: 8px; height: 1px; }
-    .ch-y { left: 50%; top: 8px; bottom: 8px; width: 1px; }
+    .crosshair-h { position: absolute; top: 50%; left: 8px; right: 8px; height: 1px; background: rgba(255, 255, 255, 0.05); }
+    .crosshair-v { position: absolute; left: 50%; top: 8px; bottom: 8px; width: 1px; background: rgba(255, 255, 255, 0.05); }
 
-    .vector-label {
+    .hud-marker-label {
       position: absolute;
       font-size: 11px;
       font-weight: bold;
-      color: #999;
+      color: #888;
     }
-    .lbl-h { top: 22%; left: 54%; }
-    .lbl-d { top: 67%; left: 47%; }
-
-    .reticle-center-pip {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 4px;
-      height: 4px;
-      margin-left: -2px;
-      margin-top: -2px;
-      background-color: #666;
-      border-radius: 50%;
-    }
+    .marker-h { top: 21%; left: 54%; }
+    .marker-d { top: 68%; left: 47%; }
 
     .telemetry-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      border: 1px solid var(--border-dark);
-      background-color: rgba(14, 14, 14, 0.6);
+      gap: 10px;
+      border: 1px solid var(--oled-border);
+      background: rgba(12, 12, 12, 0.65);
       padding: 6px 10px;
       margin-bottom: 8px;
       font-size: 8.8px;
       line-height: 1.45;
-      color: #777;
-      z-index: 5;
+      color: #6a6a6a;
     }
-
-    .telemetry-col span {
+    .telemetry-cell span {
       display: block;
       white-space: nowrap;
     }
-    .telemetry-col b {
-      color: #d0d0d0;
-      font-weight: 600;
+    .telemetry-cell b {
+      color: #c4c4c4;
+      font-weight: normal;
     }
-    .telemetry-col.right-align {
+    .telemetry-cell.right {
       text-align: right;
     }
 
-    .counters-bar {
+    .token-metrics-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 4px 2px;
+      padding: 3px 2px;
       font-size: 13.5px;
       font-weight: 700;
       letter-spacing: 0.12em;
-      color: var(--text-bright);
-      border-bottom: 1px solid var(--border-dark);
-      margin-bottom: 6px;
-      z-index: 5;
+      color: var(--oled-bright);
+      border-bottom: 1px solid var(--oled-border);
+      margin-bottom: 4px;
     }
-
-    .counter-val {
-      cursor: pointer;
-      transition: color 0.15s;
-    }
-    .counter-val:hover {
-      color: var(--accent-magenta);
-    }
-
-    .token-sub-labels {
+    .counter-legend {
       display: flex;
       justify-content: space-between;
-      font-size: 7.8px;
+      font-size: 7.5px;
       color: #555;
-      margin-top: -5px;
-      margin-bottom: 6px;
-      letter-spacing: 0.1em;
-      padding: 0 2px;
-      z-index: 5;
+      letter-spacing: 0.12em;
+      margin-bottom: 4px;
     }
 
-    .matrix-section {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      margin-bottom: 8px;
-      z-index: 5;
-    }
-
-    .matrix-chart-wrapper {
+    .matrix-chart-box {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      height: 78px;
+      height: 82px;
       gap: 2.5px;
-      padding: 4px 0;
+      padding: 3px 0 2px 0;
     }
-
     .matrix-col {
       flex: 1;
       display: flex;
@@ -325,510 +314,621 @@
       gap: 2px;
       height: 100%;
       cursor: pointer;
-      transition: opacity 0.15s;
     }
-    .matrix-col:hover {
-      opacity: 0.75;
-    }
-
     .matrix-cell {
       width: 100%;
-      height: 4.2px;
+      height: 4.5px;
       background-color: #141414;
       border-radius: 0.5px;
-      transition: background-color 0.1s ease;
+      transition: background-color 0.15s ease;
     }
-
-    .matrix-cell.active-claude {
-      background-color: #df4d89;
-      box-shadow: 0 0 3px rgba(223, 77, 137, 0.4);
+    .matrix-cell.active {
+      background-color: #9c9c9c;
     }
     .matrix-cell.active-gemini {
-      background-color: #4ecdc4;
-      box-shadow: 0 0 3px rgba(78, 205, 196, 0.4);
+      background-color: var(--oled-cyan);
+      box-shadow: 0 0 2px rgba(78, 205, 196, 0.4);
+    }
+    .matrix-cell.active-claude {
+      background-color: var(--oled-amber);
+      box-shadow: 0 0 2px rgba(232, 169, 56, 0.4);
     }
     .matrix-cell.active-openai {
-      background-color: #38ef7d;
-      box-shadow: 0 0 3px rgba(56, 239, 125, 0.4);
+      background-color: var(--oled-green);
+      box-shadow: 0 0 2px rgba(56, 239, 125, 0.4);
+    }
+    .matrix-cell.active-storm {
+      background-color: var(--oled-magenta);
+      box-shadow: 0 0 3px var(--oled-magenta-glow);
     }
 
-    .matrix-legend {
+    .matrix-legend-row {
       display: flex;
       justify-content: space-between;
       font-size: 7.5px;
       color: #666;
-      letter-spacing: 0.08em;
-      border-top: 1px dotted #1c1c1c;
+      border-top: 1px solid #161616;
       padding-top: 3px;
-    }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-    }
-    .legend-dot {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
+      margin-top: 2px;
     }
 
-    .sub-code {
+    .sub-code-stamp {
       text-align: center;
-      font-size: 10px;
+      font-size: 9.8px;
       letter-spacing: 0.22em;
-      color: #888;
-      border-top: 1px dashed var(--border-accent);
+      color: #777;
+      border-top: 1px dashed var(--oled-border-accent);
       padding-top: 5px;
-      margin-bottom: 4px;
-      z-index: 5;
+      margin-top: 5px;
+      margin-bottom: 3px;
     }
 
-    .ascii-feed-container {
+    .hex-matrix-feed {
       flex-grow: 1;
-      position: relative;
       overflow: hidden;
       font-size: 7.2px;
-      line-height: 1.18;
-      color: #262626;
+      line-height: 1.16;
+      color: #242424;
       word-break: break-all;
       letter-spacing: 0.16em;
-      border: 1px solid #121212;
+      border: 1px solid #111;
       background: #040404;
       padding: 4px 6px;
-      z-index: 5;
     }
 
-    .feed-line {
-      display: block;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .feed-line.highlight {
-      color: #444;
-    }
-
-    .device-shell.light-mode {
-      background-color: var(--bg-light) !important;
-      color: var(--text-light-dark) !important;
-      border-color: var(--border-light) !important;
-    }
-
-    .device-shell.light-mode::before {
+    .theme-kraft {
+      background-color: var(--kraft-bg);
+      color: var(--kraft-dark);
+      border: 1px solid #222;
       background-image: 
-        linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px) !important;
+        linear-gradient(var(--kraft-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--kraft-grid) 1px, transparent 1px);
+      background-size: 12px 12px;
     }
 
-    .light-mode-overlay {
-      display: none;
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: var(--bg-light);
-      z-index: 100;
-      padding: 24px 20px 20px 20px;
-      flex-direction: column;
-      overflow: hidden;
-      font-family: ui-monospace, 'SF Mono', 'Courier New', monospace;
-      color: #1a1a1a;
-    }
-
-    .device-shell.light-mode .light-mode-overlay {
-      display: flex;
-    }
-
-    .light-top-bar {
+    .kraft-header-bar {
+      border-bottom: 1.5px solid var(--kraft-dark);
+      padding-bottom: 6px;
+      margin-bottom: 6px;
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      font-size: 9.5px;
-      border-bottom: 1.5px solid #1a1a1a;
-      padding-bottom: 6px;
+      align-items: baseline;
+    }
+    .kraft-title {
+      font-size: 13.5px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+    }
+    .kraft-sub {
+      font-size: 8.5px;
       font-weight: 700;
-      letter-spacing: 0.15em;
+      color: var(--kraft-muted);
     }
 
-    .light-columns-container {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
+    .kraft-search-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .kraft-input {
+      flex: 1;
+      background: transparent;
+      border: 1.2px solid var(--kraft-dark);
+      color: var(--kraft-dark);
+      padding: 4px 6px;
+      font-family: inherit;
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      outline: none;
+      text-transform: uppercase;
+    }
+    .kraft-input::placeholder {
+      color: var(--kraft-muted);
+    }
+    .kraft-action-btn {
+      background: var(--kraft-dark);
+      color: var(--kraft-bg);
+      border: none;
+      font-family: inherit;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 4px 8px;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+    }
+    .kraft-action-btn:hover {
+      background: #333;
+    }
+
+    .kraft-stream-body {
+      display: flex;
       flex-grow: 1;
       overflow: hidden;
-      font-size: 10.5px;
-      line-height: 1.45;
-      font-weight: 600;
-      letter-spacing: 0.18em;
-      user-select: text;
+      border: 1.2px solid var(--kraft-dark);
+      background: rgba(255, 255, 255, 0.08);
     }
 
-    .light-col {
+    .kraft-glyph-rail {
+      width: 22px;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 10px;
+      font-weight: 900;
+      background: rgba(0, 0, 0, 0.03);
+      border-right: 1px solid var(--kraft-border);
+      color: var(--kraft-dark);
+    }
+    .kraft-glyph-rail.rail-right {
+      border-right: none;
+      border-left: 1px solid var(--kraft-border);
+    }
+
+    .kraft-data-center {
+      flex-grow: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 4px 6px;
+      font-size: 9.8px;
+      line-height: 1.48;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+    }
+    .kraft-data-center::-webkit-scrollbar {
+      width: 3px;
+    }
+    .kraft-data-center::-webkit-scrollbar-thumb {
+      background: var(--kraft-dark);
+    }
+
+    .kraft-row-item {
+      display: grid;
+      grid-template-columns: 2.2fr 1fr 1fr 1.2fr 1.6fr;
+      align-items: center;
+      padding: 2.5px 0;
+      border-bottom: 1px dotted rgba(20, 20, 20, 0.25);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .kraft-row-item:hover {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .kraft-4col-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid var(--kraft-border);
+      font-size: 9px;
+      line-height: 1.35;
+      color: #2b2b2b;
+    }
+    .kraft-col-block {
       white-space: nowrap;
       overflow: hidden;
     }
-    .light-glyph {
-      color: #4a473e;
-      font-weight: normal;
-    }
-    .light-accent {
-      color: #000;
-      font-weight: 900;
+
+    .kraft-footer-row {
+      border-top: 1.5px solid var(--kraft-dark);
+      padding-top: 6px;
+      margin-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 8.5px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
     }
 
-    .modal-backdrop {
-      display: none;
-      position: absolute;
+    .cfg-drawer-overlay {
+      position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
+      width: 100vw;
+      height: 100vh;
       background: rgba(0, 0, 0, 0.85);
       backdrop-filter: blur(4px);
       z-index: 200;
+      display: none;
       justify-content: center;
       align-items: center;
       padding: 16px;
     }
-    .modal-backdrop.open {
+    .cfg-drawer-overlay.active {
       display: flex;
     }
 
-    .cfg-modal {
+    .cfg-card {
       width: 100%;
+      max-width: 480px;
       background: #0d0d0d;
       border: 1px solid #333;
-      padding: 18px;
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      padding: 18px 20px;
+      color: #bbb;
+      box-shadow: 0 0 35px rgba(0, 0, 0, 0.9);
+      border-radius: 4px;
     }
 
-    .cfg-modal-header {
+    .cfg-card-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      border-bottom: 1px solid #242424;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #222;
-      padding-bottom: 8px;
-      font-size: 11px;
-      font-weight: bold;
-      color: #eee;
-      letter-spacing: 0.14em;
     }
 
-    .cfg-field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+    .cfg-input-group {
+      margin-bottom: 12px;
     }
     .cfg-label {
-      font-size: 8.5px;
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
       color: #888;
+      margin-bottom: 4px;
       letter-spacing: 0.1em;
-      display: flex;
-      justify-content: space-between;
     }
-
-    .cfg-input {
-      background: #050505;
-      border: 1px solid #262626;
+    .cfg-field {
+      width: 100%;
+      background: #141414;
+      border: 1px solid #2c2c2c;
       color: #eee;
       padding: 6px 8px;
       font-family: inherit;
       font-size: 10px;
-      letter-spacing: 0.05em;
       outline: none;
-      transition: border-color 0.2s;
+      border-radius: 2px;
     }
-    .cfg-input:focus {
-      border-color: #666;
+    .cfg-field:focus {
+      border-color: var(--oled-magenta);
     }
 
     .cfg-actions {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       gap: 8px;
-      margin-top: 6px;
+      margin-top: 16px;
+      border-top: 1px solid #222;
+      padding-top: 12px;
     }
 
-    .btn-action {
-      flex: 1;
-      background: #181818;
+    .toast-banner {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #141414;
       border: 1px solid #333;
-      color: #ddd;
-      padding: 7px;
-      font-family: inherit;
-      font-size: 9.5px;
-      cursor: pointer;
-      font-weight: bold;
+      color: #fff;
+      padding: 8px 16px;
+      font-size: 10px;
       letter-spacing: 0.1em;
-      transition: background 0.15s, border-color 0.15s;
+      border-radius: 3px;
+      z-index: 300;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
     }
-    .btn-action:hover {
-      background: #252525;
-      border-color: #555;
-    }
-    .btn-action.save {
-      background: #1f3327;
-      border-color: var(--accent-green);
-      color: var(--accent-green);
-    }
-    .btn-action.save:hover {
-      background: #284434;
+    .toast-banner.show {
+      opacity: 1;
     }
 
-    .notice-box {
-      font-size: 8px;
-      color: #555;
-      line-height: 1.35;
-      border: 1px dashed #202020;
-      padding: 6px;
-      margin-top: 2px;
+    @media (max-width: 860px) {
+      .screens-stage {
+        flex-direction: column;
+      }
+      .handheld-device.mobile-hidden {
+        display: none !important;
+      }
+      .nav-btn.dual-view-toggle {
+        display: none;
+      }
     }
   </style>
 </head>
 <body>
 
-  <div class="device-shell" id="app-shell">
+  <div class="master-wrapper">
+    <header class="master-nav">
+      <div style="font-weight: 700; letter-spacing: 0.12em; color: #f0f0f0;">
+        SPACE WX // SYS.HUD <span style="color: #666;">v3.0</span>
+      </div>
 
-    <!-- Top Status Bar -->
-    <div class="status-bar">
-      <div class="status-left">
-        <span class="live-dot" id="live-indicator"></span>
-        <span id="utc-clock">00:00:00 UTC</span>
+      <div class="nav-actions">
+        <button class="nav-btn active" id="btn-mode-oled" onclick="setAppView('oled')">01: DARK HUD</button>
+        <button class="nav-btn" id="btn-mode-kraft" onclick="setAppView('kraft')">02: KRAFT MATRIX</button>
+        <button class="nav-btn dual-view-toggle" id="btn-mode-dual" onclick="setAppView('dual')">◫ DUAL</button>
+        <button class="nav-btn" id="btn-audio" onclick="toggleWebAudio()">SND:OFF</button>
+        <button class="nav-btn" onclick="openCfgDrawer()">SYS/CFG ⚙</button>
       </div>
-      <div class="status-right">
-        <button class="hud-btn" id="btn-toggle-sound" title="Toggle audio feedback">SND:OFF</button>
-        <button class="hud-btn" id="btn-toggle-mode" title="Switch HUD/Light Matrix">MODE ◑</button>
-        <button class="hud-btn" id="btn-open-cfg" title="Configure API Keys">[SYS/CFG]</button>
-      </div>
-    </div>
+    </header>
 
-    <!-- Title & Planetary Kp Badge -->
-    <div class="header-bar">
-      <div class="app-title">
-        <span>SPACE WX</span>
-        <span style="color: #444;">::</span>
-        <span style="font-size: 9.5px; color: #777;">TOK-TRACK</span>
-      </div>
-      <div class="badge-kp" id="kp-badge">Kp-03</div>
-    </div>
+    <main class="screens-stage" id="stage-frame">
 
-    <!-- 3D Three.js Vector Particle Cloud -->
-    <div class="radar-wrapper" id="radar-container">
-      <canvas id="threejs-canvas"></canvas>
-      <div class="hud-reticle-overlay">
-        <div class="bracket b-tl"></div>
-        <div class="bracket b-tr"></div>
-        <div class="bracket b-bl"></div>
-        <div class="bracket b-br"></div>
-        <div class="crosshair-line ch-x"></div>
-        <div class="crosshair-line ch-y"></div>
-        <div class="reticle-center-pip"></div>
-        <span class="vector-label lbl-h">h</span>
-        <span class="vector-label lbl-d">d</span>
-      </div>
-    </div>
+      <!-- =========================================================
+           SLIDE 2: DARK OLED HUD MODE (SPACE WX REALTIME MONITOR)
+           ========================================================= -->
+      <section class="handheld-device theme-oled" id="device-oled" aria-label="Dark Space Weather HUD">
+        <div class="dynamic-island"></div>
 
-    <!-- Telemetry Readouts (NOAA SWPC + LLM Engine) -->
-    <div class="telemetry-grid">
-      <div class="telemetry-col">
-        <span>PHI <b id="tele-phi">242°</b> &nbsp;VEL <b id="tele-vel">438KM/S</b></span>
-        <span>DENS <b id="tele-dens">10.3/P*</b> &nbsp;AMAG <b id="tele-bt">4.2</b></span>
-        <span>SECTOR <b id="tele-sector">F-88</b> &nbsp;BZ <b id="tele-bz">-1.5nT</b></span>
-      </div>
-      <div class="telemetry-col right-align">
-        <span>CLAUD <b id="tele-claude">142K</b> &nbsp;GEM <b id="tele-gemini">89K</b></span>
-        <span>OAI <b id="tele-openai">214K</b> &nbsp;TPM <b id="tele-tpm">68%</b></span>
-        <span>NODE <b id="tele-status">SYNC:OK</b> &nbsp;ERR <b id="tele-err">0.00%</b></span>
-      </div>
-    </div>
-
-    <!-- Big Digital Metric Counters -->
-    <div class="counters-bar">
-      <span class="counter-val" id="cnt-used" title="Total Tokens Used">54946886</span>
-      <span style="color: #333;">|</span>
-      <span class="counter-val" id="cnt-rem" title="Context Quota Available">36193353</span>
-    </div>
-    <div class="token-sub-labels">
-      <span>∑ TOKENS PROCESSED</span>
-      <span>EST. REMAINING POOL</span>
-    </div>
-
-    <!-- 20-Column Dot Matrix Equalizer -->
-    <div class="matrix-section">
-      <div class="matrix-chart-wrapper" id="matrix-chart">
-        <!-- 20 columns generated by JS -->
-      </div>
-      <div class="matrix-legend">
-        <div class="legend-item">
-          <span class="legend-dot" style="background:#df4d89;"></span>
-          <span>CLAUDE 3.5</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-dot" style="background:#4ecdc4;"></span>
-          <span>GEMINI 2.0</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-dot" style="background:#38ef7d;"></span>
-          <span>CODEX / OAI</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Stamp Code -->
-    <div class="sub-code">HXWA . NLO . 706 . UHL . MEX</div>
-
-    <!-- Scrolling Hex / Stream Registry -->
-    <div class="ascii-feed-container" id="ascii-feed">
-      <!-- Live streaming log lines -->
-    </div>
-
-    <!-- LIGHT MATRIX MODE (Slide 1 replica view) -->
-    <div class="light-mode-overlay" id="light-overlay">
-      <div class="light-top-bar">
-        <span>SPACE WX // MATRIX FEED</span>
-        <button class="hud-btn" id="btn-exit-light" style="background:#1a1a1a; color:#fff;">[EXIT MATRIX]</button>
-      </div>
-      <div class="light-columns-container" id="light-columns">
-        <!-- Vertical typographic columns populated by script -->
-      </div>
-      <div style="font-size: 8.5px; border-top: 1.5px solid #1a1a1a; padding-top: 6px; margin-top: 6px; display: flex; justify-content: space-between; font-weight: 700;">
-        <span>SYS.REG: 784.OPN.K</span>
-        <span>NOAA SWPC ACTIVE</span>
-        <span>LAT: 45°28'N LON: 09°11'E</span>
-      </div>
-    </div>
-
-    <!-- BYOK CONFIG MODAL (Bring Your Own Key) -->
-    <div class="modal-backdrop" id="cfg-modal-backdrop">
-      <div class="cfg-modal">
-        <div class="cfg-modal-header">
-          <span>// SYSTEM CONFIG [BYOK]</span>
-          <button class="hud-btn" id="btn-close-cfg">✕</button>
+        <div class="device-status-row" style="color: #666;">
+          <span id="oled-clock">18:05 UTC</span>
+          <span>NOAA SWPC // DSCOVR</span>
+          <span id="noaa-badge" style="color: var(--oled-green);">● LIVE</span>
         </div>
 
-        <div class="cfg-field">
-          <label class="cfg-label">
-            <span>GOOGLE GEMINI API KEY</span>
-            <span id="gemini-status" style="color:#666;">UNCONFIGURED</span>
-          </label>
-          <input type="password" class="cfg-input" id="key-gemini" placeholder="AIzaSy..." autocomplete="off">
+        <div class="oled-header-bar">
+          <div class="oled-main-title">SPACE WX &nbsp;::</div>
+          <div class="oled-kp-tag" id="kp-badge">Kp-05</div>
         </div>
 
-        <div class="cfg-field">
-          <label class="cfg-label">
-            <span>ANTHROPIC CLAUDE API KEY</span>
-            <span id="claude-status" style="color:#666;">UNCONFIGURED</span>
-          </label>
-          <input type="password" class="cfg-input" id="key-claude" placeholder="sk-ant-api03-..." autocomplete="off">
+        <!-- 3D Vector Particle Cloud Radar Box -->
+        <div class="radar-viewport" id="radar-viewport">
+          <canvas id="threejs-canvas"></canvas>
+          <div class="hud-brackets-overlay">
+            <div class="hud-bracket br-tl"></div>
+            <div class="hud-bracket br-tr"></div>
+            <div class="hud-bracket br-bl"></div>
+            <div class="hud-bracket br-br"></div>
+            <div class="crosshair-h"></div>
+            <div class="crosshair-v"></div>
+            <span class="hud-marker-label marker-h">h</span>
+            <span class="hud-marker-label marker-d">d</span>
+          </div>
         </div>
 
-        <div class="cfg-field">
-          <label class="cfg-label">
-            <span>OPENAI / CODEX API KEY</span>
-            <span id="openai-status" style="color:#666;">UNCONFIGURED</span>
-          </label>
-          <input type="password" class="cfg-input" id="key-openai" placeholder="sk-proj-..." autocomplete="off">
+        <!-- Real NOAA Telemetry Data Grid -->
+        <div class="telemetry-grid">
+          <div class="telemetry-cell">
+            <span>PHI <b id="val-phi">242°</b> &nbsp;VEL <b id="val-vel">438KM/S</b></span>
+            <span>DENS <b id="val-dens">10.3/P*</b> &nbsp;AMAG <b id="val-bt">4.2</b></span>
+            <span>SECTOR <b id="val-sector">F-88</b> &nbsp;BZ <b id="val-bz">-1.5nT</b></span>
+          </div>
+          <div class="telemetry-cell right">
+            <span>SECTOR B-78 &nbsp;RA 814250</span>
+            <span>AXIS TILT 006° &nbsp;ECC 0.22</span>
+            <span>CORE T 5.5M &nbsp;DUST 0.1</span>
+          </div>
         </div>
 
-        <div class="notice-box">
-          KEYS ARE SAVED EXCLUSIVELY TO YOUR LOCAL BROWSER (localStorage). NEVER COMMITTED TO GITHUB OR TRANSMITTED TO THIRD PARTIES. IF NO KEYS ARE SUPPLIED, THE HUD RUNS SYNTHETIC HIGH-PRECISION STREAMING TELEMETRY.
+        <!-- Dual Monospace Telemetry Counters -->
+        <div class="token-metrics-row">
+          <span id="counter-used">54946886</span>
+          <span style="color: #333;">|</span>
+          <span id="counter-budget">36193353</span>
+        </div>
+        <div class="counter-legend">
+          <span>TOKENS CONSUMED (TODAY)</span>
+          <span>AVAILABLE CONTEXT BUDGET</span>
         </div>
 
-        <div class="cfg-actions">
-          <button class="btn-action" id="btn-test-keys">TEST PING</button>
-          <button class="btn-action save" id="btn-save-keys">SAVE STORAGE</button>
+        <!-- 20-Column Equalizer Matrix representing Token Quotas -->
+        <div class="matrix-chart-box" id="matrix-chart-box">
+          <!-- Populated dynamically via JS -->
         </div>
-      </div>
-    </div>
+        <div class="matrix-legend-row">
+          <span style="color: var(--oled-cyan);">■ GEMINI (C1-7)</span>
+          <span style="color: var(--oled-amber);">■ CLAUDE (C8-14)</span>
+          <span style="color: var(--oled-green);">■ OPENAI (C15-20)</span>
+        </div>
 
+        <div class="sub-code-stamp">HXWA . NLO . 706 . UHL . MEX</div>
+
+        <div class="hex-matrix-feed" id="ascii-stream-box"></div>
+      </section>
+
+      <!-- =========================================================
+           SLIDE 1: KRAFT PAPER MATRIX MODE (RAW STREAM & TRANSACTIONS)
+           ========================================================= -->
+      <section class="handheld-device theme-kraft mobile-hidden" id="device-kraft" aria-label="Kraft Paper Weather Matrix">
+        <div class="dynamic-island"></div>
+
+        <div class="device-status-row" style="color: var(--kraft-dark);">
+          <span id="kraft-clock">18:05</span>
+          <span>ATMOS.TEL // WMO METAR</span>
+          <span id="loc-status">GPS:ONLINE</span>
+        </div>
+
+        <div class="kraft-header-bar">
+          <div class="kraft-title">THE WEATHER TERMINAL</div>
+          <div class="kraft-sub">ATMOS.TEL // 1013 HPA</div>
+        </div>
+
+        <div class="kraft-search-row">
+          <input type="text" class="kraft-input" id="kraft-search-field" placeholder="FILTER STATION / IATA..." autocomplete="off">
+          <button class="kraft-action-btn" id="btn-detect-gps" title="Query live weather at device geolocation">LOCATE ⌖</button>
+        </div>
+
+        <!-- High density matrix stream -->
+        <div class="kraft-stream-body">
+          <div class="kraft-glyph-rail">
+            <span>☼</span><span>▲</span><span>☁</span><span>·</span><span>⚡</span>
+            <span>▼</span><span>☂</span><span>≋</span><span>■</span><span>☼</span>
+            <span>▲</span><span>☁</span><span>·</span><span>⚡</span><span>▼</span>
+          </div>
+
+          <div class="kraft-data-center" id="kraft-station-list">
+            <!-- Populated dynamically via JS -->
+          </div>
+
+          <div class="kraft-glyph-rail rail-right">
+            <span>▼</span><span>⚡</span><span>·</span><span>☁</span><span>▲</span>
+            <span>☼</span><span>■</span><span>≋</span><span>☂</span><span>▼</span>
+            <span>⚡</span><span>·</span><span>☁</span><span>▲</span><span>☼</span>
+          </div>
+        </div>
+
+        <!-- 4-Column Alphanumeric Matrix Telemetry (Slide 1 match) -->
+        <div class="kraft-4col-grid" id="kraft-4col-grid">
+          <!-- Populated via script -->
+        </div>
+
+        <div class="kraft-footer-row">
+          <span>HUMBLETEAM ● LAY</span>
+          <span>OPEN-METEO // SWPC</span>
+          <span>REG.784.OPN</span>
+        </div>
+      </section>
+
+    </main>
   </div>
+
+  <div class="cfg-drawer-overlay" id="cfg-overlay">
+    <div class="cfg-card">
+      <div class="cfg-card-title">
+        <span>SYSTEM CONFIG // BYOK VAULT</span>
+        <button class="nav-btn" onclick="closeCfgDrawer()">✕ ESC</button>
+      </div>
+
+      <div style="font-size: 8.5px; color: #777; margin-bottom: 14px; line-height: 1.4;">
+        Keys are stored strictly in client-side <b style="color:#aaa;">localStorage</b> on this device. No external proxies or relays.
+      </div>
+
+      <div class="cfg-input-group">
+        <label class="cfg-label">GOOGLE GEMINI API KEY</label>
+        <input type="password" class="cfg-field" id="cfg-gemini-key" placeholder="AIzaSy...">
+      </div>
+
+      <div class="cfg-input-group">
+        <label class="cfg-label">ANTHROPIC CLAUDE API KEY</label>
+        <input type="password" class="cfg-field" id="cfg-claude-key" placeholder="sk-ant-api03-...">
+      </div>
+
+      <div class="cfg-input-group">
+        <label class="cfg-label">OPENAI / CODEX API KEY</label>
+        <input type="password" class="cfg-field" id="cfg-openai-key" placeholder="sk-proj-...">
+      </div>
+
+      <div class="cfg-input-group">
+        <label class="cfg-label">TOTAL DAILY TOKEN BUDGET</label>
+        <input type="number" class="cfg-field" id="cfg-token-budget" placeholder="100000000" value="100000000">
+      </div>
+
+      <div class="cfg-actions">
+        <button class="nav-btn" onclick="simulateTokenBurst()">⚡ TEST BURST</button>
+        <button class="nav-btn" onclick="clearKeys()">WIPE KEYS</button>
+        <button class="nav-btn active" onclick="saveKeys()">SAVE TO STORAGE</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-banner" id="toast">CONFIG UPDATED</div>
 
   <script>
     const STATE = {
-      soundEnabled: false,
-      lightMode: false,
-      tokensUsed: 54946886,
-      tokensRem: 36193353,
-      kpIndex: 3,
-      solarWindSpeed: 438,
-      plasmaDensity: 10.3,
+      view: 'oled', // 'oled', 'kraft', 'dual'
+      audioEnabled: false,
+      kp: 5,
+      vel: 438,
+      dens: 10.3,
       bz: -1.5,
       phi: 242,
-      keys: {
-        gemini: localStorage.getItem('swx_key_gemini') || '',
-        claude: localStorage.getItem('swx_key_claude') || '',
-        openai: localStorage.getItem('swx_key_openai') || ''
-      }
+      bt: 4.2,
+      usedTokens: 54946886,
+      budgetTokens: 36193353,
+      geminiTokens: 18240000,
+      claudeTokens: 21450000,
+      openaiTokens: 15256886,
+      stations: [
+        { code: 'MXP', city: 'MILAN', lat: 45.63, lon: 8.72, temp: 18, hpa: 1016, wind: 'NNE 11', glyph: '☼' },
+        { code: 'LIN', city: 'LINATE', lat: 45.46, lon: 9.27, temp: 19, hpa: 1015, wind: 'NE 08', glyph: '☼' },
+        { code: 'FCO', city: 'ROME', lat: 41.80, lon: 12.24, temp: 21, hpa: 1014, wind: 'W 14', glyph: '☼' },
+        { code: 'JFK', city: 'NEW YORK', lat: 40.64, lon: -73.77, temp: 14, hpa: 1019, wind: 'NW 19', glyph: '☂' },
+        { code: 'LHR', city: 'LONDON', lat: 51.47, lon: -0.45, temp: 13, hpa: 1008, wind: 'SW 22', glyph: '☁' },
+        { code: 'SXF', city: 'BERLIN', lat: 52.36, lon: 13.50, temp: 12, hpa: 1012, wind: 'WNW 15', glyph: '≋' },
+        { code: 'HND', city: 'TOKYO', lat: 35.54, lon: 139.77, temp: 20, hpa: 1017, wind: 'ESE 09', glyph: '☼' },
+        { code: 'CDG', city: 'PARIS', lat: 49.00, lon: 2.55, temp: 15, hpa: 1013, wind: 'SSW 13', glyph: '☁' },
+        { code: 'KEF', city: 'REYKJAVIK', lat: 63.98, lon: -22.60, temp: 4, hpa: 998, wind: 'NE 34', glyph: '⚡' },
+        { code: 'DXB', city: 'DUBAI', lat: 25.25, lon: 55.36, temp: 33, hpa: 1011, wind: 'NNW 12', glyph: '☼' },
+        { code: 'SYD', city: 'SYDNEY', lat: -33.94, lon: 151.17, temp: 19, hpa: 1022, wind: 'SE 16', glyph: '☼' }
+      ]
     };
 
-    // Minimal Web Audio API Synthesizer (No external sound files required)
-    let audioCtx = null;
-    function playBeep(freq = 1200, duration = 0.03, type = 'sine') {
-      if (!STATE.soundEnabled) return;
+    let audioContext = null;
+    function playBeep(freq = 1000, duration = 0.03, type = 'square') {
+      if (!STATE.audioEnabled) return;
       try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioContext.state === 'suspended') audioContext.resume();
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
         osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+        gain.gain.setValueAtTime(0.035, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
         osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        gain.connect(audioContext.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + duration);
-      } catch (e) {
-        // Audio policy ignore
-      }
+        osc.stop(audioContext.currentTime + duration);
+      } catch (err) {}
     }
 
-    const utcClock = document.getElementById('utc-clock');
-    function updateUTCClock() {
+    function toggleWebAudio() {
+      STATE.audioEnabled = !STATE.audioEnabled;
+      const btn = document.getElementById('btn-audio');
+      btn.textContent = STATE.audioEnabled ? 'SND:ON' : 'SND:OFF';
+      btn.style.color = STATE.audioEnabled ? 'var(--oled-green)' : '#aaa';
+      if (STATE.audioEnabled) playBeep(1400, 0.05);
+    }
+
+    const devOled = document.getElementById('device-oled');
+    const devKraft = document.getElementById('device-kraft');
+    const btnOled = document.getElementById('btn-mode-oled');
+    const btnKraft = document.getElementById('btn-mode-kraft');
+    const btnDual = document.getElementById('btn-mode-dual');
+
+    function setAppView(mode) {
+      STATE.view = mode;
+      btnOled.classList.toggle('active', mode === 'oled');
+      btnKraft.classList.toggle('active', mode === 'kraft');
+      btnDual.classList.toggle('active', mode === 'dual');
+
+      if (mode === 'oled') {
+        devOled.classList.remove('mobile-hidden');
+        devOled.style.display = 'flex';
+        devKraft.classList.add('mobile-hidden');
+        devKraft.style.display = 'none';
+      } else if (mode === 'kraft') {
+        devKraft.classList.remove('mobile-hidden');
+        devKraft.style.display = 'flex';
+        devOled.classList.add('mobile-hidden');
+        devOled.style.display = 'none';
+      } else { // dual
+        devOled.classList.remove('mobile-hidden');
+        devOled.style.display = 'flex';
+        devKraft.classList.remove('mobile-hidden');
+        devKraft.style.display = 'flex';
+      }
+      playBeep(880, 0.03);
+      if (typeof handleCanvasResize === 'function') handleCanvasResize();
+    }
+
+    if (window.innerWidth > 860) {
+      setAppView('dual');
+    } else {
+      setAppView('oled');
+    }
+
+    function tickClocks() {
       const now = new Date();
       const h = String(now.getUTCHours()).padStart(2, '0');
       const m = String(now.getUTCMinutes()).padStart(2, '0');
       const s = String(now.getUTCSeconds()).padStart(2, '0');
-      utcClock.textContent = `${h}:${m}:${s} UTC`;
+      document.getElementById('oled-clock').textContent = `${h}:${m}:${s} UTC`;
+      document.getElementById('kraft-clock').textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     }
-    setInterval(updateUTCClock, 1000);
-    updateUTCClock();
+    setInterval(tickClocks, 1000);
+    tickClocks();
 
-    // Mode Toggle
-    const appShell = document.getElementById('app-shell');
-    const btnToggleMode = document.getElementById('btn-toggle-mode');
-    const btnExitLight = document.getElementById('btn-exit-light');
-
-    function toggleMode() {
-      STATE.lightMode = !STATE.lightMode;
-      if (STATE.lightMode) {
-        appShell.classList.add('light-mode');
-        generateLightMatrixData();
-      } else {
-        appShell.classList.remove('light-mode');
-      }
-      playBeep(880, 0.05, 'square');
-    }
-    btnToggleMode.addEventListener('click', toggleMode);
-    btnExitLight.addEventListener('click', toggleMode);
-
-    // Sound Toggle
-    const btnToggleSound = document.getElementById('btn-toggle-sound');
-    btnToggleSound.addEventListener('click', () => {
-      STATE.soundEnabled = !STATE.soundEnabled;
-      btnToggleSound.textContent = STATE.soundEnabled ? 'SND:ON' : 'SND:OFF';
-      btnToggleSound.style.color = STATE.soundEnabled ? 'var(--accent-green)' : '#999';
-      if (STATE.soundEnabled) playBeep(1400, 0.06);
-    });
-
-    const radarContainer = document.getElementById('radar-container');
+    const radarContainer = document.getElementById('radar-viewport');
     const canvas = document.getElementById('threejs-canvas');
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
     renderer.setSize(radarContainer.clientWidth, radarContainer.clientHeight);
@@ -838,17 +938,16 @@
     const camera = new THREE.PerspectiveCamera(45, radarContainer.clientWidth / radarContainer.clientHeight, 0.1, 1000);
     camera.position.z = 240;
 
-    // Generate dense orbital particle cloud
-    const particleCount = 2200;
+    const count = 2100;
     const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
+    const positions = new Float32Array(count * 3);
 
-    for (let i = 0; i < particleCount; i++) {
+    for (let i = 0; i < count; i++) {
       const u = Math.random();
       const v = Math.random();
       const theta = u * 2.0 * Math.PI;
       const phi = Math.acos(2.0 * v - 1.0);
-      const r = Math.cbrt(Math.random()) * 68; // Spherical cluster
+      const r = Math.cbrt(Math.random()) * 66;
 
       positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
@@ -857,406 +956,362 @@
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
     const material = new THREE.PointsMaterial({
-      color: 0xcccccc,
-      size: 1.6,
+      color: 0xd2d2d2,
+      size: 1.7,
       transparent: true,
-      opacity: 0.85
+      opacity: 0.88
     });
 
-    const pointCloud = new THREE.Points(geometry, material);
-    scene.add(pointCloud);
+    const particleCloud = new THREE.Points(geometry, material);
+    scene.add(particleCloud);
 
-    // Inner wireframe sphere for enhanced sci-fi HUD geometry
-    const wireGeom = new THREE.IcosahedronGeometry(45, 1);
-    const wireMat = new THREE.MeshBasicMaterial({
-      color: 0x333333,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.18
-    });
-    const innerWire = new THREE.Mesh(wireGeom, wireMat);
-    scene.add(innerWire);
+    // Wireframe center core
+    const wireCore = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(42, 1),
+      new THREE.MeshBasicMaterial({ color: 0x333333, wireframe: true, transparent: true, opacity: 0.25 })
+    );
+    scene.add(wireCore);
 
     let isDragging = false;
-    let prevX = 0;
-    let prevY = 0;
+    let lastX = 0;
+    let lastY = 0;
 
     radarContainer.addEventListener('pointerdown', (e) => {
       isDragging = true;
-      prevX = e.clientX;
-      prevY = e.clientY;
-      playBeep(600, 0.02, 'sine');
+      lastX = e.clientX;
+      lastY = e.clientY;
+      playBeep(650, 0.02, 'sine');
     });
 
     window.addEventListener('pointermove', (e) => {
       if (!isDragging) return;
-      const deltaX = e.clientX - prevX;
-      const deltaY = e.clientY - prevY;
-      pointCloud.rotation.y += deltaX * 0.007;
-      pointCloud.rotation.x += deltaY * 0.007;
-      innerWire.rotation.y += deltaX * 0.007;
-      innerWire.rotation.x += deltaY * 0.007;
-      prevX = e.clientX;
-      prevY = e.clientY;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      particleCloud.rotation.y += dx * 0.007;
+      particleCloud.rotation.x += dy * 0.007;
+      wireCore.rotation.y += dx * 0.007;
+      wireCore.rotation.x += dy * 0.007;
+      lastX = e.clientX;
+      lastY = e.clientY;
     });
 
     window.addEventListener('pointerup', () => { isDragging = false; });
     window.addEventListener('pointercancel', () => { isDragging = false; });
 
-    function renderScene() {
-      requestAnimationFrame(renderScene);
+    function animateRadar() {
+      requestAnimationFrame(animateRadar);
       if (!isDragging) {
-        pointCloud.rotation.y += 0.003;
-        pointCloud.rotation.x += 0.0012;
-        innerWire.rotation.y += 0.003;
-        innerWire.rotation.x += 0.0012;
+        particleCloud.rotation.y += 0.003;
+        particleCloud.rotation.x += 0.0012;
+        wireCore.rotation.y += 0.003;
+        wireCore.rotation.x += 0.0012;
       }
       renderer.render(scene, camera);
     }
-    renderScene();
+    animateRadar();
 
-    window.addEventListener('resize', () => {
-      if (!radarContainer) return;
+    function handleCanvasResize() {
+      if (!radarContainer || !renderer) return;
       const w = radarContainer.clientWidth;
       const h = radarContainer.clientHeight;
+      if (w === 0 || h === 0) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
-    });
+    }
+    window.addEventListener('resize', handleCanvasResize);
 
-    const matrixChart = document.getElementById('matrix-chart');
-    const totalCols = 20;
-    const maxRows = 12;
-    const colElements = [];
+    const chartBox = document.getElementById('matrix-chart-box');
+    const colsTotal = 20;
+    const rowsTotal = 12;
+    const chartGrid = [];
 
-    // Columns 0-6: Claude (Magenta), 7-13: Gemini (Cyan), 14-19: OpenAI (Green)
-    for (let c = 0; c < totalCols; c++) {
-      const colDiv = document.createElement('div');
-      colDiv.className = 'matrix-col';
-      let activeClass = 'active-claude';
-      let providerName = 'Claude 3.5';
+    const baseProfile = [2, 3, 4, 3, 5, 8, 10, 6, 4, 3, 5, 7, 9, 11, 8, 5, 3, 2, 2, 1];
 
-      if (c >= 7 && c < 14) {
-        activeClass = 'active-gemini';
-        providerName = 'Gemini 2.0';
-      } else if (c >= 14) {
-        activeClass = 'active-openai';
-        providerName = 'OpenAI GPT-4o';
-      }
+    for (let c = 0; c < colsTotal; c++) {
+      const col = document.createElement('div');
+      col.className = 'matrix-col';
+      const cellStack = [];
 
-      colDiv.title = `Col ${c + 1}: ${providerName}`;
-      colDiv.addEventListener('click', () => {
-        playBeep(900 + c * 30, 0.03, 'triangle');
-      });
-
-      const cells = [];
-      for (let r = 0; r < maxRows; r++) {
+      for (let r = 0; r < rowsTotal; r++) {
         const cell = document.createElement('div');
         cell.className = 'matrix-cell';
-        colDiv.appendChild(cell);
-        cells.push({ el: cell, activeClass: activeClass });
+        col.appendChild(cell);
+        cellStack.push(cell);
       }
-      matrixChart.appendChild(colDiv);
-      colElements.push(cells);
+      chartBox.appendChild(col);
+      chartGrid.push(cellStack);
+
+      col.addEventListener('click', () => {
+        let provider = c < 7 ? 'GEMINI' : c < 14 ? 'CLAUDE' : 'OPENAI';
+        showToast(`COL #${c+1} // ${provider} CONTEXT BUFFER LOAD`);
+        playBeep(1100, 0.04);
+      });
     }
 
-    function updateMatrixHistogram(levels) {
-      for (let c = 0; c < totalCols; c++) {
-        const lvl = Math.min(maxRows, Math.max(0, Math.round(levels[c] || 2)));
-        for (let r = 0; r < maxRows; r++) {
-          const { el, activeClass } = colElements[c][r];
-          if (r < lvl) {
-            el.className = `matrix-cell ${activeClass}`;
+    function updateMatrixEqualizer(heights) {
+      for (let c = 0; c < colsTotal; c++) {
+        const activeLevel = Math.min(rowsTotal, Math.max(1, Math.round(heights[c] || 2)));
+        for (let r = 0; r < rowsTotal; r++) {
+          const cell = chartGrid[c][r];
+          if (r < activeLevel) {
+            if (STATE.kp >= 5 && r >= 9) {
+              cell.className = 'matrix-cell active-storm';
+            } else if (c < 7) {
+              cell.className = 'matrix-cell active-gemini';
+            } else if (c < 14) {
+              cell.className = 'matrix-cell active-claude';
+            } else {
+              cell.className = 'matrix-cell active-openai';
+            }
           } else {
-            el.className = 'matrix-cell';
+            cell.className = 'matrix-cell';
           }
         }
       }
     }
+    updateMatrixEqualizer(baseProfile);
 
-    // Default distribution matching the concept art profile
-    const initialProfile = [2, 3, 5, 4, 6, 9, 11, 7, 5, 4, 6, 8, 10, 11, 9, 6, 4, 3, 2, 2];
-    updateMatrixHistogram(initialProfile);
+    async function queryNOAAData() {
+      const badge = document.getElementById('noaa-badge');
+      const kpTag = document.getElementById('kp-badge');
 
-    const kpBadge = document.getElementById('kp-badge');
-    const telePhi = document.getElementById('tele-phi');
-    const teleVel = document.getElementById('tele-vel');
-    const teleDens = document.getElementById('tele-dens');
-    const teleBt = document.getElementById('tele-bt');
-    const teleBz = document.getElementById('tele-bz');
-
-    async function fetchNOAAData() {
       try {
-        // 1. Kp Index Realtime
+        // Planetary Kp
         const kpRes = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
         if (kpRes.ok) {
-          const data = await kpRes.json();
-          if (data && data.length > 1) {
-            const last = data[data.length - 1];
-            const kp = Math.round(parseFloat(last[1]));
-            STATE.kpIndex = kp;
-            kpBadge.textContent = `Kp-${String(kp).padStart(2, '0')}`;
-            if (kp >= 5) {
-              kpBadge.classList.add('alert');
-            } else {
-              kpBadge.classList.remove('alert');
-            }
+          const kpArr = await kpRes.json();
+          if (kpArr && kpArr.length > 1) {
+            const latest = kpArr[kpArr.length - 1];
+            STATE.kp = Math.round(parseFloat(latest[1]));
+            kpTag.textContent = `Kp-${String(STATE.kp).padStart(2, '0')}`;
+            kpTag.classList.toggle('storm', STATE.kp >= 5);
 
-            // Sync trailing columns with historical Kp wave
-            const recent = data.slice(-20).map(row => (parseFloat(row[1]) / 9) * maxRows);
-            if (recent.length === 20) {
-              updateMatrixHistogram(recent);
-            }
+            const recentKp = kpArr.slice(-20).map(row => (parseFloat(row[1]) / 9) * rowsTotal);
+            if (recentKp.length === 20) updateMatrixEqualizer(recentKp);
           }
         }
 
-        // 2. Solar Wind Plasma (Speed & Density)
+        // Plasma & Solar Wind
         const plasmaRes = await fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-2-hour.json');
         if (plasmaRes.ok) {
-          const plasma = await plasmaRes.json();
-          for (let i = plasma.length - 1; i > 0; i--) {
-            const [time, dens, speed] = plasma[i];
+          const plasmaArr = await plasmaRes.json();
+          for (let i = plasmaArr.length - 1; i > 0; i--) {
+            const [time, dens, speed] = plasmaArr[i];
             if (speed && dens) {
-              STATE.solarWindSpeed = Math.round(speed);
-              STATE.plasmaDensity = parseFloat(dens).toFixed(1);
-              teleVel.textContent = `${STATE.solarWindSpeed}KM/S`;
-              teleDens.textContent = `${STATE.plasmaDensity}/P*`;
+              STATE.vel = Math.round(speed);
+              STATE.dens = parseFloat(dens).toFixed(1);
+              document.getElementById('val-vel').textContent = `${STATE.vel}KM/S`;
+              document.getElementById('val-dens').textContent = `${STATE.dens}/P*`;
               break;
             }
           }
         }
 
-        // 3. Interplanetary Magnetic Field (IMF Bz & Bt)
+        // Magnetic IMF Bz
         const magRes = await fetch('https://services.swpc.noaa.gov/products/solar-wind/mag-2-hour.json');
         if (magRes.ok) {
-          const mag = await magRes.json();
-          for (let i = mag.length - 1; i > 0; i--) {
-            const [time, bx, by, bz, phi, lat, bt] = mag[i];
+          const magArr = await magRes.json();
+          for (let i = magArr.length - 1; i > 0; i--) {
+            const [time, bx, by, bz, phi, lat, bt] = magArr[i];
             if (bz !== null) {
-              STATE.bz = parseFloat(bz).toFixed(2);
+              STATE.bz = parseFloat(bz).toFixed(1);
               STATE.phi = Math.round(phi);
-              teleBz.textContent = `${STATE.bz}nT`;
-              telePhi.textContent = `${STATE.phi}°`;
-              if (bt) teleBt.textContent = parseFloat(bt).toFixed(1);
+              STATE.bt = parseFloat(bt).toFixed(1);
+              document.getElementById('val-bz').textContent = `${STATE.bz}nT`;
+              document.getElementById('val-phi').textContent = `${STATE.phi}°`;
+              document.getElementById('val-bt').textContent = STATE.bt;
               break;
             }
           }
         }
+
+        badge.textContent = '● LIVE';
+        badge.style.color = 'var(--oled-green)';
       } catch (err) {
-        console.warn('NOAA SWPC live stream cached or rate limited. Maintaining telemetry cycle.', err);
+        badge.textContent = '○ CACHED';
+        badge.style.color = '#888';
       }
     }
+    queryNOAAData();
+    setInterval(queryNOAAData, 120000); // Poll every 2 minutes
 
-    fetchNOAAData();
-    setInterval(fetchNOAAData, 120000); // Check NOAA updates every 2 mins
+    const stationContainer = document.getElementById('kraft-station-list');
+    const searchField = document.getElementById('kraft-search-field');
 
-    const cntUsed = document.getElementById('cnt-used');
-    const cntRem = document.getElementById('cnt-rem');
-    const asciiFeed = document.getElementById('ascii-feed');
-    const teleClaude = document.getElementById('tele-claude');
-    const teleGemini = document.getElementById('tele-gemini');
-    const teleOpenai = document.getElementById('tele-openai');
-    const teleTpm = document.getElementById('tele-tpm');
+    function renderKraftStations(filter = '') {
+      stationContainer.innerHTML = '';
+      const q = filter.trim().toUpperCase();
+      const items = STATE.stations.filter(s => s.code.includes(q) || s.city.includes(q));
 
-    const feedPool = [
-      'ACK 200 // GEMINI-2.0-FLASH : 412 PROMPT_TOKENS 182 COMPL_TOKENS 42ms',
-      'ACK 200 // CLAUDE-3-5-SONNET : 842 PROMPT_TOKENS 324 COMPL_TOKENS 118ms',
-      'ACK 200 // OPENAI-GPT-4O : 620 PROMPT_TOKENS 289 COMPL_TOKENS 86ms',
-      'NOAA_DSCOVR_L1 // VECT_STAB 0.9984 GAMMA 1.041 RAD_PRESSURE OK',
-      'RATE_LIMIT_CHECK // RPM_REMAINING: 498/500 TPM_LOAD: 64.2%',
-      'CTX_WINDOW_SHIFT // RETRIEVAL_CHUNKS: 8 EMBED_DIM: 1536 COS_SIM: 0.884',
-      'SYS_TELEMETRY // MAG_LAT: 52.4 MAG_LON: -114.2 KP_STATUS: STABLE'
+      if (items.length === 0) {
+        stationContainer.innerHTML = `<div style="padding:10px; color:#555;">NO STATIONS MATCHING "${q}"</div>`;
+        return;
+      }
+
+      items.forEach(st => {
+        const row = document.createElement('div');
+        row.className = 'kraft-row-item';
+        row.innerHTML = `
+          <div><b style="color:#000;">${st.code}</b> <span style="font-size:8px; color:#555;">${st.city.slice(0,6)}</span></div>
+          <div style="text-align:center;">${st.glyph}</div>
+          <div style="text-align:right; font-weight:900;">${st.temp > 0 ? '+' : ''}${st.temp}°C</div>
+          <div style="text-align:right; color:#555; font-size:8.5px;">${st.hpa}</div>
+          <div style="text-align:right; font-size:8.5px;">${st.wind}</div>
+        `;
+        row.addEventListener('click', () => {
+          showToast(`STATION ${st.code} // TELEMETRY SYNCED`);
+          playBeep(900, 0.03);
+        });
+        stationContainer.appendChild(row);
+      });
+    }
+    renderKraftStations();
+
+    searchField.addEventListener('input', (e) => renderKraftStations(e.target.value));
+
+    // Geolocation detection
+    document.getElementById('btn-detect-gps').addEventListener('click', () => {
+      const locLabel = document.getElementById('loc-status');
+      playBeep(1200, 0.04);
+
+      if (!navigator.geolocation) {
+        locLabel.textContent = 'GPS:NONE';
+        return;
+      }
+
+      locLabel.textContent = 'GPS:SEEKING';
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        locLabel.textContent = 'GPS:LOCK';
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        try {
+          const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,surface_pressure,wind_speed_10m`);
+          if (res.ok) {
+            const data = await res.json();
+            STATE.stations.unshift({
+              code: 'LOCAL',
+              city: 'MY GPS',
+              lat: lat,
+              lon: lon,
+              temp: Math.round(data.current.temperature_2m),
+              hpa: Math.round(data.current.surface_pressure),
+              wind: `${Math.round(data.current.wind_speed_10m)}KM/H`,
+              glyph: '⌖'
+            });
+            renderKraftStations(searchField.value);
+            showToast('GPS LOCAL STATION REGISTERED');
+          }
+        } catch (e) {}
+      }, () => {
+        locLabel.textContent = 'GPS:OFFLINE';
+      }, { timeout: 7000 });
+    });
+
+    // Populate 4-column Kraft raw codes (Slide 1 match)
+    const kraft4Col = document.getElementById('kraft-4col-grid');
+    const rawIdentifiers = [
+      'MP.UL.181.', 'FLI.ISL.291.', 'TXJ.HTK.486.', 'DPB.RIJ.473.',
+      'LHT.TJW.537.', 'XPR.HUD.908.', 'EACA.SXF.892.', 'NYHE.JED.024.',
+      'NTSG.KOP.290.', 'NAIA.CRT.784.', 'FISH.KER.486.', 'CZPG.MUP.920.',
+      'SFUA.BUM.176.', 'LGXP.FSZ.683.', 'SKAO.UIF.840.', 'LJAO.XTP.260.',
+      'ATQW.SZH.659.', 'CYUH.LQM.828.', 'QJBU.RIS.180.', 'FAUU.LBO.244.',
+      'GEMINI.TOK.125.', 'CLAUDE.CTX.464.', 'CODEX.REQ.015.', 'SWPC.MAG.863.'
     ];
 
-    function pushFeedLine(customText = null) {
-      const line = document.createElement('div');
-      line.className = 'feed-line';
-      const now = new Date();
-      const timeStr = `${String(now.getUTCHours()).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')}:${String(now.getUTCSeconds()).padStart(2, '0')}`;
-      line.textContent = `[${timeStr}] ${customText || feedPool[Math.floor(Math.random() * feedPool.length)]}`;
-      asciiFeed.prepend(line);
-      while (asciiFeed.children.length > 9) {
-        asciiFeed.removeChild(asciiFeed.lastChild);
+    for (let c = 0; c < 4; c++) {
+      const colDiv = document.createElement('div');
+      colDiv.className = 'kraft-col-block';
+      let s = '';
+      for (let r = 0; r < 6; r++) {
+        s += `<div>${rawIdentifiers[(c * 6 + r) % rawIdentifiers.length]}</div>`;
       }
+      colDiv.innerHTML = s;
+      kraft4Col.appendChild(colDiv);
     }
 
-    // Seed initial feed lines
-    for (let i = 0; i < 7; i++) pushFeedLine();
+    const cfgOverlay = document.getElementById('cfg-overlay');
+    function openCfgDrawer() {
+      document.getElementById('cfg-gemini-key').value = localStorage.getItem('SWX_KEY_GEMINI') || '';
+      document.getElementById('cfg-claude-key').value = localStorage.getItem('SWX_KEY_CLAUDE') || '';
+      document.getElementById('cfg-openai-key').value = localStorage.getItem('SWX_KEY_OPENAI') || '';
+      document.getElementById('cfg-token-budget').value = localStorage.getItem('SWX_BUDGET') || '100000000';
+      cfgOverlay.classList.add('active');
+      playBeep(920, 0.04);
+    }
 
-    // Pulse live token stream
+    function closeCfgDrawer() {
+      cfgOverlay.classList.remove('active');
+      playBeep(700, 0.03);
+    }
+
+    function saveKeys() {
+      localStorage.setItem('SWX_KEY_GEMINI', document.getElementById('cfg-gemini-key').value.trim());
+      localStorage.setItem('SWX_KEY_CLAUDE', document.getElementById('cfg-claude-key').value.trim());
+      localStorage.setItem('SWX_KEY_OPENAI', document.getElementById('cfg-openai-key').value.trim());
+      const b = parseInt(document.getElementById('cfg-token-budget').value) || 100000000;
+      localStorage.setItem('SWX_BUDGET', b);
+      STATE.budgetTokens = b;
+      document.getElementById('counter-budget').textContent = STATE.budgetTokens.toString();
+      closeCfgDrawer();
+      showToast('KEYS &amp; BUDGET SAVED TO LOCALSTORAGE');
+    }
+
+    function clearKeys() {
+      localStorage.removeItem('SWX_KEY_GEMINI');
+      localStorage.removeItem('SWX_KEY_CLAUDE');
+      localStorage.removeItem('SWX_KEY_OPENAI');
+      document.getElementById('cfg-gemini-key').value = '';
+      document.getElementById('cfg-claude-key').value = '';
+      document.getElementById('cfg-openai-key').value = '';
+      showToast('LOCAL STORAGE WIPED');
+      playBeep(500, 0.06);
+    }
+
+    function simulateTokenBurst() {
+      const burst = Math.floor(Math.random() * 45000 + 12000);
+      STATE.usedTokens += burst;
+      STATE.budgetTokens = Math.max(0, STATE.budgetTokens - burst);
+      document.getElementById('counter-used').textContent = STATE.usedTokens.toString();
+      document.getElementById('counter-budget').textContent = STATE.budgetTokens.toString();
+
+      // Equalizer reaction
+      const jittered = baseProfile.map(v => Math.min(rowsTotal, v + Math.floor(Math.random() * 4)));
+      updateMatrixEqualizer(jittered);
+      showToast(`SIMULATED BURST: +${burst} TOKENS`);
+      playBeep(1300, 0.08);
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerHTML = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    const asciiStreamBox = document.getElementById('ascii-stream-box');
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.:;#-';
+    let streamTxt = '';
+    for (let i = 0; i < 780; i++) {
+      streamTxt += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    asciiStreamBox.textContent = streamTxt;
+
+    const cntUsed = document.getElementById('counter-used');
+    const cntBudget = document.getElementById('counter-budget');
+
+    // Real-time micro-fluctuation cycle
     setInterval(() => {
-      const deltaTokens = Math.floor(Math.random() * 85) + 15;
-      STATE.tokensUsed += deltaTokens;
-      STATE.tokensRem = Math.max(0, STATE.tokensRem - deltaTokens);
+      STATE.usedTokens += Math.floor(Math.random() * 7 - 3);
+      STATE.budgetTokens += Math.floor(Math.random() * 5 - 2);
+      cntUsed.textContent = STATE.usedTokens.toString();
+      cntBudget.textContent = STATE.budgetTokens.toString();
 
-      cntUsed.textContent = STATE.tokensUsed.toLocaleString('en-US').replace(/,/g, '');
-      cntRem.textContent = STATE.tokensRem.toLocaleString('en-US').replace(/,/g, '');
-
-      // Micro-jitter in TPM & model quotas
-      const tpmVal = Math.floor(60 + Math.random() * 20);
-      teleTpm.textContent = `${tpmVal}%`;
-      teleClaude.textContent = `${140 + Math.floor(Math.random() * 8)}K`;
-      teleGemini.textContent = `${88 + Math.floor(Math.random() * 6)}K`;
-      teleOpenai.textContent = `${210 + Math.floor(Math.random() * 10)}K`;
-
-      if (Math.random() > 0.4) {
-        pushFeedLine();
-      }
-
-      // Slightly perturb matrix columns to simulate neural traffic
-      const currentLevels = initialProfile.map(v => Math.max(1, Math.min(maxRows, v + Math.floor(Math.random() * 3 - 1))));
-      updateMatrixHistogram(currentLevels);
-    }, 1800);
-
-    const lightColumns = document.getElementById('light-columns');
-    const glyphs = ['▲', '▼', '◆', '◇', '■', '□', '●', '○', '☼', '✦', '⨂', '⊕', '☿', '⚡', '·'];
-    const codes = [
-      'MP.', 'UL.', 'ISL', 'TXJ', 'DPB', 'LHT', 'XPR', 'EAC', 'NYH', 'NTG',
-      'NAI', 'FIS', 'CZP', 'SFU', 'LGX', 'SKA', 'LJA', 'ATQ', 'CYU', 'QJB',
-      'FAU', 'YRU', 'FAU', 'ZQX', 'IFL', 'BAH', 'EYT', 'URZ', 'JBJ', 'JBS',
-      'YYB', 'UWM', 'DRH', 'UTO', 'UK.', 'W.'
-    ];
-
-    function generateLightMatrixData() {
-      lightColumns.innerHTML = '';
-      for (let colIdx = 0; colIdx < 4; colIdx++) {
-        const colDiv = document.createElement('div');
-        colDiv.className = 'light-col';
-        let colHtml = '';
-
-        for (let rowIdx = 0; rowIdx < 34; rowIdx++) {
-          const code = codes[(colIdx * 8 + rowIdx) % codes.length];
-          const glyph = glyphs[(rowIdx * 3 + colIdx) % glyphs.length];
-          const num = String(Math.floor(Math.random() * 900 + 100));
-
-          if (rowIdx % 5 === 0) {
-            colHtml += `<div><span class="light-accent">${code}</span>.<span class="light-glyph">${glyph}</span>.${num}</div>`;
-          } else {
-            colHtml += `<div>${code}.${num}.${glyph}</div>`;
-          }
-        }
-        colDiv.innerHTML = colHtml;
-        lightColumns.appendChild(colDiv);
-      }
-    }
-
-    const cfgBackdrop = document.getElementById('cfg-modal-backdrop');
-    const btnOpenCfg = document.getElementById('btn-open-cfg');
-    const btnCloseCfg = document.getElementById('btn-close-cfg');
-    const btnSaveKeys = document.getElementById('btn-save-keys');
-    const btnTestKeys = document.getElementById('btn-test-keys');
-
-    const keyGeminiInput = document.getElementById('key-gemini');
-    const keyClaudeInput = document.getElementById('key-claude');
-    const keyOpenaiInput = document.getElementById('key-openai');
-
-    const geminiStatus = document.getElementById('gemini-status');
-    const claudeStatus = document.getElementById('claude-status');
-    const openaiStatus = document.getElementById('openai-status');
-
-    function syncKeyStatusDisplay() {
-      keyGeminiInput.value = STATE.keys.gemini;
-      keyClaudeInput.value = STATE.keys.claude;
-      keyOpenaiInput.value = STATE.keys.openai;
-
-      geminiStatus.textContent = STATE.keys.gemini ? 'STORED' : 'UNCONFIGURED';
-      geminiStatus.style.color = STATE.keys.gemini ? 'var(--accent-green)' : '#666';
-
-      claudeStatus.textContent = STATE.keys.claude ? 'STORED' : 'UNCONFIGURED';
-      claudeStatus.style.color = STATE.keys.claude ? 'var(--accent-green)' : '#666';
-
-      openaiStatus.textContent = STATE.keys.openai ? 'STORED' : 'UNCONFIGURED';
-      openaiStatus.style.color = STATE.keys.openai ? 'var(--accent-green)' : '#666';
-    }
-
-    btnOpenCfg.addEventListener('click', () => {
-      syncKeyStatusDisplay();
-      cfgBackdrop.classList.add('open');
-      playBeep(1100, 0.04);
-    });
-
-    btnCloseCfg.addEventListener('click', () => {
-      cfgBackdrop.classList.remove('open');
-      playBeep(700, 0.04);
-    });
-
-    cfgBackdrop.addEventListener('click', (e) => {
-      if (e.target === cfgBackdrop) {
-        cfgBackdrop.classList.remove('open');
-      }
-    });
-
-    // Save Keys to LocalStorage
-    btnSaveKeys.addEventListener('click', () => {
-      STATE.keys.gemini = keyGeminiInput.value.trim();
-      STATE.keys.claude = keyClaudeInput.value.trim();
-      STATE.keys.openai = keyOpenaiInput.value.trim();
-
-      localStorage.setItem('swx_key_gemini', STATE.keys.gemini);
-      localStorage.setItem('swx_key_claude', STATE.keys.claude);
-      localStorage.setItem('swx_key_openai', STATE.keys.openai);
-
-      syncKeyStatusDisplay();
-      pushFeedLine('SYS_CFG // BYOK STORAGE COMMITTED SECURELY');
-      playBeep(1400, 0.08, 'triangle');
-      cfgBackdrop.classList.remove('open');
-    });
-
-    // Test Ping verification
-    btnTestKeys.addEventListener('click', async () => {
-      pushFeedLine('PING_EXEC // TESTING CONFIGURED API ENDPOINTS...');
-      playBeep(1000, 0.04);
-
-      // 1. Test Gemini Key
-      if (STATE.keys.gemini) {
-        geminiStatus.textContent = 'CHECKING...';
-        try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${STATE.keys.gemini}`);
-          if (res.ok) {
-            geminiStatus.textContent = 'ACTIVE 200';
-            geminiStatus.style.color = 'var(--accent-green)';
-            pushFeedLine('GEMINI API // AUTH SUCCESSFUL (200 OK)');
-          } else {
-            geminiStatus.textContent = `ERR ${res.status}`;
-            geminiStatus.style.color = '#ff4444';
-            pushFeedLine(`GEMINI API // ERROR ${res.status}`);
-          }
-        } catch (e) {
-          geminiStatus.textContent = 'CORS/NET';
-          geminiStatus.style.color = 'var(--accent-amber)';
-        }
-      }
-
-      // 2. Test OpenAI Key
-      if (STATE.keys.openai) {
-        openaiStatus.textContent = 'CHECKING...';
-        try {
-          const res = await fetch('https://api.openai.com/v1/models', {
-            headers: { 'Authorization': `Bearer ${STATE.keys.openai}` }
-          });
-          if (res.ok) {
-            openaiStatus.textContent = 'ACTIVE 200';
-            openaiStatus.style.color = 'var(--accent-green)';
-            pushFeedLine('OPENAI API // AUTH SUCCESSFUL (200 OK)');
-          } else {
-            openaiStatus.textContent = `ERR ${res.status}`;
-            openaiStatus.style.color = '#ff4444';
-            pushFeedLine(`OPENAI API // ERROR ${res.status}`);
-          }
-        } catch (e) {
-          openaiStatus.textContent = 'CORS/NET';
-          openaiStatus.style.color = 'var(--accent-amber)';
-        }
-      }
-
-      // 3. Test Claude Key
-      if (STATE.keys.claude) {
-        claudeStatus.textContent = 'SAVED/SEC';
-        claudeStatus.style.color = 'var(--accent-green)';
-        pushFeedLine('CLAUDE API // KEY LOCAL-READY (BYOK)');
-      }
-    });
+      const profileFluct = baseProfile.map(v => Math.max(1, Math.min(rowsTotal, v + Math.floor(Math.random() * 3 - 1))));
+      updateMatrixEqualizer(profileFluct);
+    }, 1400);
   </script>
 </body>
 </html>
+```
 ```
