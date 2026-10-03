@@ -6,36 +6,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#070707">
-  <title>SPACE WX // TELEMETRY &amp; TOKEN HUD</title>
+  <meta name="theme-color" content="#cdc7b9">
+  <title>KRAFT MATRIX // BRUTALIST WEATHER TELEMETRY</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
   <style>
     :root {
-      /* OLED Dark HUD Theme (Slide 2) */
-      --oled-bg: #070707;
-      --oled-surface: #0e0e0e;
-      --oled-card: #121212;
-      --oled-border: #1f1f1f;
-      --oled-border-accent: #2e2e2e;
-      --oled-text: #b5b5b5;
-      --oled-muted: #5e5e5e;
-      --oled-bright: #efefef;
-      --oled-magenta: #df4d89;
-      --oled-magenta-glow: rgba(223, 77, 137, 0.45);
-      --oled-storm: #ff3344;
-      --oled-green: #38ef7d;
-      --oled-amber: #e8a938;
-      --oled-cyan: #4ecdc4;
-
-      /* Kraft Paper Matrix Theme (Slide 1) */
+      /* Authentic Kraft Heavy-Stock Palette (Slide 1) */
       --kraft-bg: #cdc7b9;
-      --kraft-card: #c5bea8;
-      --kraft-dark: #121212;
-      --kraft-muted: #524f46;
-      --kraft-border: #2a2822;
-      --kraft-grid: rgba(0, 0, 0, 0.05);
+      --kraft-paper-deep: #c3bcab;
+      --kraft-paper-light: #d8d2c4;
+      --kraft-ink: #181816;
+      --kraft-ink-dim: #45433c;
+      --kraft-ink-faint: #757165;
+      --kraft-border: #2c2a24;
+      --kraft-stamp-red: #9e2b25;
+      --kraft-stamp-green: #256b3e;
+      --kraft-stamp-blue: #1c4b78;
 
-      --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+      /* OLED Dark HUD Palette (Slide 2) */
+      --oled-bg: #070707;
+      --oled-card: #0e0e0e;
+      --oled-border: #1f1f1f;
+      --oled-text: #b5b5b5;
+      --oled-bright: #f0f0f0;
+      --oled-magenta: #df4d89;
+      --oled-green: #38ef7d;
+      --oled-cyan: #4ecdc4;
+      --oled-amber: #e8a938;
+
+      --mono-font: 'SF Mono', 'Cascadia Code', 'Consolas', 'Courier New', Courier, monospace;
     }
 
     * {
@@ -46,173 +46,382 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* Textured Kraft Stock Paper Background with procedural micro-fiber grain */
     body {
-      background-color: #030303;
-      color: var(--oled-text);
-      font-family: var(--font-mono);
+      background-color: #121211;
+      color: var(--kraft-ink);
+      font-family: var(--mono-font);
       font-size: 11px;
       line-height: 1.25;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      padding: 12px;
       overflow-x: hidden;
-      padding: 10px;
     }
 
-    .master-wrapper {
+    /* Outer Desktop Stage Container */
+    .app-viewport {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 12px;
       width: 100%;
-      max-width: 960px;
+      max-width: 440px;
     }
 
-    .master-nav {
+    /* Master Top Controls Bar */
+    .master-hud-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       width: 100%;
-      max-width: 860px;
-      background: #0d0d0d;
-      border: 1px solid #222;
-      padding: 7px 12px;
+      background: #1c1c1a;
+      border: 1px solid #33312b;
+      padding: 8px 12px;
       border-radius: 4px;
-      color: #999;
+      color: #9c988d;
       font-size: 9.5px;
-      z-index: 60;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
     }
 
-    .nav-actions {
+    .hud-controls-group {
       display: flex;
       gap: 6px;
       align-items: center;
     }
 
-    .nav-btn {
-      background: #161616;
-      border: 1px solid #333;
-      color: #aaa;
-      padding: 4px 9px;
+    .btn-brutalist {
+      background: #252420;
+      border: 1px solid #454238;
+      color: #b8b3a5;
+      padding: 4px 8px;
       font-family: inherit;
       font-size: 9px;
       cursor: pointer;
       letter-spacing: 0.08em;
-      transition: all 0.15s ease;
-      border-radius: 2px;
       text-transform: uppercase;
+      border-radius: 2px;
+      transition: background 0.12s, color 0.12s;
     }
-    .nav-btn:hover {
-      background: #242424;
+    .btn-brutalist:hover {
+      background: #36342d;
       color: #fff;
-      border-color: #555;
     }
-    .nav-btn.active {
-      background: var(--oled-magenta);
-      color: #fff;
-      border-color: var(--oled-magenta);
+    .btn-brutalist.active {
+      background: var(--kraft-ink);
+      color: var(--kraft-bg);
+      border-color: var(--kraft-ink);
       font-weight: 700;
     }
 
-    .screens-stage {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 24px;
+    /* Handheld Smartphone Shell Chassis */
+    .phone-chassis {
       width: 100%;
-      transition: all 0.3s ease;
-    }
-
-    .handheld-device {
-      width: 100%;
-      max-width: 412px;
-      height: 870px;
+      height: 885px;
+      border-radius: 48px;
       position: relative;
-      border-radius: 46px;
-      padding: 16px 18px 22px 18px;
-      box-shadow: 0 0 0 10px #1a1a1a, 0 30px 70px rgba(0, 0, 0, 0.98);
+      box-shadow: 0 0 0 11px #1a1917, 0 32px 75px rgba(0, 0, 0, 0.95);
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      flex-shrink: 0;
-      transition: transform 0.25s ease, opacity 0.25s ease;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .dynamic-island {
+    /* Dynamic Island Notch */
+    .phone-island {
       position: absolute;
       top: 11px;
       left: 50%;
       transform: translateX(-50%);
-      width: 108px;
-      height: 24px;
-      background-color: #000;
+      width: 110px;
+      height: 25px;
+      background: #000;
       border-radius: 14px;
       z-index: 100;
       pointer-events: none;
     }
 
-    .device-status-row {
+    /* =========================================================
+       THEME 1: KRAFT PAPER MATRIX MODE (SLIDE 1 REPLICA)
+       ========================================================= */
+    .kraft-card-face {
+      width: 100%;
+      height: 100%;
+      background-color: var(--kraft-bg);
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.12) 0%, rgba(0, 0, 0, 0.04) 100%),
+        repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(40, 38, 32, 0.02) 1px, rgba(40, 38, 32, 0.02) 2px),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.055'/%3E%3C/svg%3E");
+      color: var(--kraft-ink);
+      display: flex;
+      flex-direction: column;
+      padding: 16px 14px 18px 14px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Header & Status Indicator */
+    .kraft-top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-top: 18px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-size: 9.5px;
-      font-weight: 700;
-      z-index: 20;
+      font-weight: 800;
+      border-bottom: 1px solid rgba(44, 42, 36, 0.35);
+      padding-bottom: 6px;
     }
 
-    .theme-oled {
+    .gps-lock-tag {
+      background: var(--kraft-ink);
+      color: var(--kraft-bg);
+      padding: 2px 6px;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 8.5px;
+      letter-spacing: 0.12em;
+    }
+    .gps-lock-tag:hover {
+      background: var(--kraft-stamp-blue);
+    }
+
+    /* Search & Filter Tooling */
+    .kraft-search-container {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 6px;
+      border-bottom: 1.5px solid var(--kraft-border);
+      padding-bottom: 5px;
+    }
+
+    .kraft-search-label {
+      font-weight: 900;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+    }
+
+    .kraft-search-input {
+      flex: 1;
+      background: transparent;
+      border: 1px dashed var(--kraft-border);
+      color: var(--kraft-ink);
+      font-family: inherit;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 3px 6px;
+      outline: none;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+    .kraft-search-input::placeholder {
+      color: var(--kraft-ink-faint);
+    }
+
+    /* Core Matrix Board Wrapper: Left Rail + Center Matrix + Right Stream Rail */
+    .kraft-matrix-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      border: 1.5px solid var(--kraft-border);
+      background: rgba(255, 255, 255, 0.05);
+      position: relative;
+    }
+
+    /* Left Border Glyph Rail */
+    .rail-glyph-left {
+      width: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 9.5px;
+      font-weight: 900;
+      border-right: 1.2px solid var(--kraft-border);
+      background: rgba(0, 0, 0, 0.025);
+      color: var(--kraft-ink);
+    }
+
+    /* Center Scrollable 4-Column Monospace Matrix Table */
+    .matrix-table-viewport {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 4px 6px;
+      font-size: 10px;
+      line-height: 1.38;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+    }
+    .matrix-table-viewport::-webkit-scrollbar {
+      width: 3px;
+    }
+    .matrix-table-viewport::-webkit-scrollbar-thumb {
+      background: var(--kraft-border);
+    }
+
+    /* Exact 4-Column Monospace Row */
+    .matrix-row {
+      display: grid;
+      grid-template-columns: 2.1fr 1.8fr 1.9fr 1.6fr;
+      align-items: center;
+      padding: 2.2px 4px;
+      border-bottom: 1px dotted rgba(44, 42, 36, 0.22);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .matrix-row:hover {
+      background: rgba(24, 24, 22, 0.1);
+    }
+    .matrix-row.highlighted {
+      background: rgba(158, 43, 37, 0.12);
+    }
+
+    .col-fix { color: var(--kraft-ink); font-weight: 900; }
+    .col-way { color: var(--kraft-ink-dim); }
+    .col-met { color: var(--kraft-ink); }
+    .col-flg { text-align: right; color: var(--kraft-ink); font-weight: 900; }
+
+    /* Match Highlight text */
+    .match-char {
+      background: var(--kraft-ink);
+      color: var(--kraft-bg);
+      padding: 0 1px;
+    }
+
+    /* Far-Right Vertical Telemetry Stream Rail (SIHURUPDMJOSDNTBPNLLN...) */
+    .rail-stream-right {
+      width: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-left: 1.2px solid var(--kraft-border);
+      background: rgba(0, 0, 0, 0.025);
+      font-size: 9px;
+      font-weight: 900;
+      line-height: 1.15;
+      color: var(--kraft-ink-dim);
+      letter-spacing: 0.05em;
+      word-break: break-all;
+      overflow: hidden;
+    }
+    .stream-char-flow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5px;
+    }
+
+    /* Bottom Stamp & Telemetry Footer */
+    .kraft-footer-bar {
+      border-top: 1.5px solid var(--kraft-border);
+      padding-top: 5px;
+      margin-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8.5px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+    }
+
+    .kraft-export-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .btn-kraft-sm {
+      background: transparent;
+      border: 1px solid var(--kraft-border);
+      color: var(--kraft-ink);
+      font-family: inherit;
+      font-size: 8px;
+      font-weight: 800;
+      padding: 2px 5px;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+    }
+    .btn-kraft-sm:hover {
+      background: var(--kraft-ink);
+      color: var(--kraft-bg);
+    }
+
+    /* =========================================================
+       THEME 2: DARK OLED HUD MODE (SLIDE 2 REPLICA)
+       ========================================================= */
+    .oled-card-face {
+      width: 100%;
+      height: 100%;
       background-color: var(--oled-bg);
       color: var(--oled-text);
-      border: 1px solid #1c1c1c;
+      display: none;
+      flex-direction: column;
+      padding: 16px 16px 20px 16px;
+      overflow: hidden;
+      position: relative;
       background-image: 
         linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
       background-size: 14px 14px;
     }
 
-    .oled-header-bar {
+    .oled-top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px dashed var(--oled-border-accent);
+      margin-top: 18px;
+      margin-bottom: 6px;
+      font-size: 9.5px;
+      color: #666;
+      font-weight: 700;
+    }
+
+    .oled-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px dashed var(--oled-border);
       padding-bottom: 6px;
       margin-bottom: 6px;
     }
-    .oled-main-title {
+    .oled-title-text {
       font-size: 13.5px;
-      font-weight: 700;
-      letter-spacing: 0.16em;
+      font-weight: 800;
+      letter-spacing: 0.18em;
       color: var(--oled-bright);
     }
-    .oled-kp-tag {
+    .oled-kp-pill {
       font-size: 13px;
       font-weight: 800;
       color: var(--oled-magenta);
-      letter-spacing: 0.06em;
-      text-shadow: 0 0 8px var(--oled-magenta-glow);
-      transition: color 0.3s, text-shadow 0.3s;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 8px rgba(223, 77, 137, 0.45);
     }
-    .oled-kp-tag.storm {
-      color: var(--oled-storm);
-      text-shadow: 0 0 12px rgba(255, 51, 68, 0.85);
+    .oled-kp-pill.storm {
+      color: #ff3344;
+      text-shadow: 0 0 10px rgba(255, 51, 68, 0.8);
     }
 
-    .radar-viewport {
+    /* 3D Radar Viewport */
+    .oled-radar-box {
       position: relative;
       width: 100%;
-      height: 228px;
-      margin: 2px 0 6px 0;
+      height: 220px;
       border: 1px solid var(--oled-border);
-      background: radial-gradient(circle at 50% 50%, rgba(24, 24, 24, 0.6) 0%, rgba(7, 7, 7, 0.98) 86%);
+      background: radial-gradient(circle at 50% 50%, rgba(26, 26, 26, 0.5) 0%, rgba(7, 7, 7, 0.98) 85%);
       cursor: grab;
       touch-action: none;
+      margin-bottom: 6px;
     }
-    .radar-viewport:active {
+    .oled-radar-box:active {
       cursor: grabbing;
     }
 
@@ -222,7 +431,7 @@
       display: block;
     }
 
-    .hud-brackets-overlay {
+    .hud-brackets-layer {
       position: absolute;
       top: 0;
       left: 0;
@@ -230,1088 +439,826 @@
       height: 100%;
       pointer-events: none;
     }
-
-    .hud-bracket {
+    .bracket-corner {
       position: absolute;
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border: 1px solid #3c3c3c;
     }
-    .br-tl { top: 6px; left: 6px; border-right: none; border-bottom: none; }
-    .br-tr { top: 6px; right: 6px; border-left: none; border-bottom: none; }
-    .br-bl { bottom: 6px; left: 6px; border-right: none; border-top: none; }
-    .br-br { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+    .c-tl { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+    .c-tr { top: 6px; right: 6px; border-left: none; border-bottom: none; }
+    .c-bl { bottom: 6px; left: 6px; border-right: none; border-top: none; }
+    .c-br { bottom: 6px; right: 6px; border-left: none; border-top: none; }
 
-    .crosshair-h { position: absolute; top: 50%; left: 8px; right: 8px; height: 1px; background: rgba(255, 255, 255, 0.05); }
-    .crosshair-v { position: absolute; left: 50%; top: 8px; bottom: 8px; width: 1px; background: rgba(255, 255, 255, 0.05); }
+    .cross-h { position: absolute; top: 50%; left: 8px; right: 8px; height: 1px; background: rgba(255, 255, 255, 0.05); }
+    .cross-v { position: absolute; left: 50%; top: 8px; bottom: 8px; width: 1px; background: rgba(255, 255, 255, 0.05); }
 
-    .hud-marker-label {
+    .hud-tag {
       position: absolute;
       font-size: 11px;
       font-weight: bold;
       color: #888;
     }
-    .marker-h { top: 21%; left: 54%; }
-    .marker-d { top: 68%; left: 47%; }
+    .tag-h-pos { top: 22%; left: 54%; }
+    .tag-d-pos { top: 68%; left: 47%; }
 
-    .telemetry-grid {
+    /* Space Telemetry Box */
+    .oled-telem-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 8px;
       border: 1px solid var(--oled-border);
-      background: rgba(12, 12, 12, 0.65);
       padding: 6px 10px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-size: 8.8px;
       line-height: 1.45;
-      color: #6a6a6a;
+      color: #666;
     }
-    .telemetry-cell span {
-      display: block;
-      white-space: nowrap;
-    }
-    .telemetry-cell b {
+    .oled-telem-grid b {
       color: #c4c4c4;
       font-weight: normal;
     }
-    .telemetry-cell.right {
-      text-align: right;
-    }
 
-    .token-metrics-row {
+    .oled-counters-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 3px 2px;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 700;
       letter-spacing: 0.12em;
       color: var(--oled-bright);
       border-bottom: 1px solid var(--oled-border);
-      margin-bottom: 4px;
-    }
-    .counter-legend {
-      display: flex;
-      justify-content: space-between;
-      font-size: 7.5px;
-      color: #555;
-      letter-spacing: 0.12em;
+      padding-bottom: 3px;
       margin-bottom: 4px;
     }
 
-    .matrix-chart-box {
+    /* 20-Column Equalizer */
+    .oled-matrix-bars {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      height: 82px;
+      height: 75px;
       gap: 2.5px;
-      padding: 3px 0 2px 0;
+      margin-bottom: 4px;
     }
-    .matrix-col {
+    .oled-bar-col {
       flex: 1;
       display: flex;
       flex-direction: column-reverse;
       gap: 2px;
       height: 100%;
-      cursor: pointer;
     }
-    .matrix-cell {
+    .oled-bar-cell {
       width: 100%;
-      height: 4.5px;
+      height: 4px;
       background-color: #141414;
       border-radius: 0.5px;
-      transition: background-color 0.15s ease;
     }
-    .matrix-cell.active {
-      background-color: #9c9c9c;
+    .oled-bar-cell.active {
+      background-color: #8a8a8a;
     }
-    .matrix-cell.active-gemini {
-      background-color: var(--oled-cyan);
-      box-shadow: 0 0 2px rgba(78, 205, 196, 0.4);
-    }
-    .matrix-cell.active-claude {
-      background-color: var(--oled-amber);
-      box-shadow: 0 0 2px rgba(232, 169, 56, 0.4);
-    }
-    .matrix-cell.active-openai {
-      background-color: var(--oled-green);
-      box-shadow: 0 0 2px rgba(56, 239, 125, 0.4);
-    }
-    .matrix-cell.active-storm {
-      background-color: var(--oled-magenta);
-      box-shadow: 0 0 3px var(--oled-magenta-glow);
-    }
+    .oled-bar-cell.active-gemini { background-color: var(--oled-cyan); }
+    .oled-bar-cell.active-claude { background-color: var(--oled-amber); }
+    .oled-bar-cell.active-openai { background-color: var(--oled-green); }
 
-    .matrix-legend-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 7.5px;
-      color: #666;
-      border-top: 1px solid #161616;
-      padding-top: 3px;
-      margin-top: 2px;
-    }
-
-    .sub-code-stamp {
+    .oled-sub-stamp {
       text-align: center;
-      font-size: 9.8px;
+      font-size: 9.5px;
       letter-spacing: 0.22em;
       color: #777;
-      border-top: 1px dashed var(--oled-border-accent);
+      border-top: 1px dashed var(--oled-border);
       padding-top: 5px;
-      margin-top: 5px;
-      margin-bottom: 3px;
+      margin-top: 4px;
     }
 
-    .hex-matrix-feed {
+    .oled-hex-feed {
       flex-grow: 1;
       overflow: hidden;
       font-size: 7.2px;
-      line-height: 1.16;
-      color: #242424;
+      line-height: 1.15;
+      color: #262626;
       word-break: break-all;
-      letter-spacing: 0.16em;
-      border: 1px solid #111;
+      letter-spacing: 0.15em;
+      border: 1px solid #141414;
       background: #040404;
       padding: 4px 6px;
+      margin-top: 5px;
     }
 
-    .theme-kraft {
-      background-color: var(--kraft-bg);
-      color: var(--kraft-dark);
-      border: 1px solid #222;
-      background-image: 
-        linear-gradient(var(--kraft-grid) 1px, transparent 1px),
-        linear-gradient(90deg, var(--kraft-grid) 1px, transparent 1px);
-      background-size: 12px 12px;
-    }
-
-    .kraft-header-bar {
-      border-bottom: 1.5px solid var(--kraft-dark);
-      padding-bottom: 6px;
-      margin-bottom: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-    }
-    .kraft-title {
-      font-size: 13.5px;
-      font-weight: 900;
-      letter-spacing: 0.16em;
-    }
-    .kraft-sub {
-      font-size: 8.5px;
-      font-weight: 700;
-      color: var(--kraft-muted);
-    }
-
-    .kraft-search-row {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-    .kraft-input {
-      flex: 1;
-      background: transparent;
-      border: 1.2px solid var(--kraft-dark);
-      color: var(--kraft-dark);
-      padding: 4px 6px;
-      font-family: inherit;
-      font-size: 9.5px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      outline: none;
-      text-transform: uppercase;
-    }
-    .kraft-input::placeholder {
-      color: var(--kraft-muted);
-    }
-    .kraft-action-btn {
-      background: var(--kraft-dark);
-      color: var(--kraft-bg);
-      border: none;
-      font-family: inherit;
-      font-size: 9px;
-      font-weight: 700;
-      padding: 4px 8px;
-      cursor: pointer;
-      letter-spacing: 0.06em;
-    }
-    .kraft-action-btn:hover {
-      background: #333;
-    }
-
-    .kraft-stream-body {
-      display: flex;
-      flex-grow: 1;
-      overflow: hidden;
-      border: 1.2px solid var(--kraft-dark);
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .kraft-glyph-rail {
-      width: 22px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      padding: 6px 0;
-      font-size: 10px;
-      font-weight: 900;
-      background: rgba(0, 0, 0, 0.03);
-      border-right: 1px solid var(--kraft-border);
-      color: var(--kraft-dark);
-    }
-    .kraft-glyph-rail.rail-right {
-      border-right: none;
-      border-left: 1px solid var(--kraft-border);
-    }
-
-    .kraft-data-center {
-      flex-grow: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      padding: 4px 6px;
-      font-size: 9.8px;
-      line-height: 1.48;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-    }
-    .kraft-data-center::-webkit-scrollbar {
-      width: 3px;
-    }
-    .kraft-data-center::-webkit-scrollbar-thumb {
-      background: var(--kraft-dark);
-    }
-
-    .kraft-row-item {
-      display: grid;
-      grid-template-columns: 2.2fr 1fr 1fr 1.2fr 1.6fr;
-      align-items: center;
-      padding: 2.5px 0;
-      border-bottom: 1px dotted rgba(20, 20, 20, 0.25);
-      cursor: pointer;
-      transition: background 0.1s;
-    }
-    .kraft-row-item:hover {
-      background: rgba(0, 0, 0, 0.08);
-    }
-
-    .kraft-4col-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      margin-top: 6px;
-      padding-top: 6px;
-      border-top: 1px solid var(--kraft-border);
-      font-size: 9px;
-      line-height: 1.35;
-      color: #2b2b2b;
-    }
-    .kraft-col-block {
-      white-space: nowrap;
-      overflow: hidden;
-    }
-
-    .kraft-footer-row {
-      border-top: 1.5px solid var(--kraft-dark);
-      padding-top: 6px;
-      margin-top: 6px;
-      display: flex;
-      justify-content: space-between;
-      font-size: 8.5px;
-      font-weight: 800;
-      letter-spacing: 0.1em;
-    }
-
-    .cfg-drawer-overlay {
-      position: fixed;
+    /* Ink-Stamped METAR Weather Station Popover / Drawer */
+    .metar-drawer-backdrop {
+      position: absolute;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(4px);
-      z-index: 200;
+      width: 100%;
+      height: 100%;
+      background: rgba(18, 17, 15, 0.75);
+      backdrop-filter: blur(2px);
+      z-index: 150;
       display: none;
-      justify-content: center;
-      align-items: center;
-      padding: 16px;
+      align-items: flex-end;
+      padding: 0;
     }
-    .cfg-drawer-overlay.active {
+    .metar-drawer-backdrop.active {
       display: flex;
     }
 
-    .cfg-card {
+    .metar-drawer-sheet {
       width: 100%;
-      max-width: 480px;
-      background: #0d0d0d;
-      border: 1px solid #333;
-      padding: 18px 20px;
-      color: #bbb;
-      box-shadow: 0 0 35px rgba(0, 0, 0, 0.9);
-      border-radius: 4px;
+      background: var(--kraft-paper-deep);
+      border-top: 2px solid var(--kraft-border);
+      padding: 16px 16px 22px 16px;
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.4);
+      color: var(--kraft-ink);
+      font-family: var(--mono-font);
+      position: relative;
+      transform: translateY(100%);
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .metar-drawer-backdrop.active .metar-drawer-sheet {
+      transform: translateY(0);
     }
 
-    .cfg-card-title {
-      font-size: 13px;
-      font-weight: 800;
-      color: #fff;
-      border-bottom: 1px solid #242424;
-      padding-bottom: 8px;
-      margin-bottom: 12px;
+    .drawer-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: 1.5px solid var(--kraft-border);
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+    }
+    .drawer-title {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
     }
 
-    .cfg-input-group {
+    /* Vintage Ink Stamp Badges */
+    .ink-stamp-badge {
+      display: inline-block;
+      border: 2px solid var(--kraft-stamp-green);
+      color: var(--kraft-stamp-green);
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      transform: rotate(-3deg);
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+    .ink-stamp-badge.ifr {
+      border-color: var(--kraft-stamp-red);
+      color: var(--kraft-stamp-red);
+      transform: rotate(2deg);
+    }
+
+    .metar-raw-box {
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px dashed var(--kraft-border);
+      padding: 6px 8px;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1.4;
+      margin-bottom: 10px;
+      word-break: break-all;
+    }
+
+    .metar-param-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      font-size: 9px;
+      line-height: 1.4;
       margin-bottom: 12px;
     }
-    .cfg-label {
+    .param-line span {
+      color: var(--kraft-ink-dim);
       display: block;
-      font-size: 9px;
-      font-weight: 700;
-      color: #888;
-      margin-bottom: 4px;
-      letter-spacing: 0.1em;
+      font-size: 8px;
     }
-    .cfg-field {
-      width: 100%;
-      background: #141414;
-      border: 1px solid #2c2c2c;
-      color: #eee;
-      padding: 6px 8px;
-      font-family: inherit;
+    .param-line b {
+      font-weight: 900;
       font-size: 10px;
-      outline: none;
-      border-radius: 2px;
-    }
-    .cfg-field:focus {
-      border-color: var(--oled-magenta);
     }
 
-    .cfg-actions {
+    .drawer-footer-actions {
       display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 16px;
-      border-top: 1px solid #222;
-      padding-top: 12px;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--kraft-border);
+      padding-top: 8px;
     }
 
-    .toast-banner {
+    /* Toast Notification Element */
+    .toast-overlay {
       position: fixed;
-      bottom: 20px;
+      bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      background: #141414;
-      border: 1px solid #333;
-      color: #fff;
-      padding: 8px 16px;
-      font-size: 10px;
-      letter-spacing: 0.1em;
-      border-radius: 3px;
+      background: var(--kraft-ink);
+      color: var(--kraft-bg);
+      border: 1px solid #000;
+      padding: 6px 14px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      border-radius: 2px;
       z-index: 300;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.2s ease;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     }
-    .toast-banner.show {
+    .toast-overlay.active {
       opacity: 1;
-    }
-
-    @media (max-width: 860px) {
-      .screens-stage {
-        flex-direction: column;
-      }
-      .handheld-device.mobile-hidden {
-        display: none !important;
-      }
-      .nav-btn.dual-view-toggle {
-        display: none;
-      }
     }
   </style>
 </head>
 <body>
 
-  <div class="master-wrapper">
-    <header class="master-nav">
-      <div style="font-weight: 700; letter-spacing: 0.12em; color: #f0f0f0;">
-        SPACE WX // SYS.HUD <span style="color: #666;">v3.0</span>
+  <div class="app-viewport">
+    
+    <!-- Top HUD Switcher & Tools -->
+    <header class="master-hud-bar">
+      <div style="font-weight: 800; letter-spacing: 0.12em; color: #e6e2d8;">
+        BRUTALIST // WX.METAR <span style="color: #666;">LAY.01</span>
       </div>
 
-      <div class="nav-actions">
-        <button class="nav-btn active" id="btn-mode-oled" onclick="setAppView('oled')">01: DARK HUD</button>
-        <button class="nav-btn" id="btn-mode-kraft" onclick="setAppView('kraft')">02: KRAFT MATRIX</button>
-        <button class="nav-btn dual-view-toggle" id="btn-mode-dual" onclick="setAppView('dual')">◫ DUAL</button>
-        <button class="nav-btn" id="btn-audio" onclick="toggleWebAudio()">SND:OFF</button>
-        <button class="nav-btn" onclick="openCfgDrawer()">SYS/CFG ⚙</button>
+      <div class="hud-controls-group">
+        <button class="btn-brutalist active" id="btn-kraft-view" onclick="switchTheme('kraft')">01: KRAFT</button>
+        <button class="btn-brutalist" id="btn-oled-view" onclick="switchTheme('oled')">02: OLED</button>
+        <button class="btn-brutalist" id="btn-audio-toggle" onclick="toggleAudioSynthesis()">SND:ON</button>
       </div>
     </header>
 
-    <main class="screens-stage" id="stage-frame">
+    <!-- Handheld Phone Chassis Container -->
+    <main class="phone-chassis">
+      <!-- Phone Hardware Dynamic Island -->
+      <div class="phone-island"></div>
 
       <!-- =========================================================
-           SLIDE 2: DARK OLED HUD MODE (SPACE WX REALTIME MONITOR)
+           SLIDE 1: KRAFT PAPER MATRIX MODE
            ========================================================= -->
-      <section class="handheld-device theme-oled" id="device-oled" aria-label="Dark Space Weather HUD">
-        <div class="dynamic-island"></div>
-
-        <div class="device-status-row" style="color: #666;">
-          <span id="oled-clock">18:05 UTC</span>
-          <span>NOAA SWPC // DSCOVR</span>
-          <span id="noaa-badge" style="color: var(--oled-green);">● LIVE</span>
+      <section class="kraft-card-face" id="view-kraft">
+        <!-- Status Bar -->
+        <div class="kraft-top-bar">
+          <span id="kraft-clock">9:41</span>
+          <span id="gps-coords-display">LAT 45.46°N LON 09.19°E</span>
+          <span class="gps-lock-tag" id="btn-lock-gps" onclick="acquireDeviceCoordinates()">[LOCK GPS]</span>
         </div>
 
-        <div class="oled-header-bar">
-          <div class="oled-main-title">SPACE WX &nbsp;::</div>
-          <div class="oled-kp-tag" id="kp-badge">Kp-05</div>
+        <!-- Search & Filter Row -->
+        <div class="kraft-search-container">
+          <span class="kraft-search-label">FIND //</span>
+          <input type="text" class="kraft-search-input" id="matrix-search-box" placeholder="CODE / METRIC / SECTOR..." autocomplete="off">
+          <span id="match-counter" style="font-size: 8.5px; font-weight: 800; color: var(--kraft-ink-dim);">37/37</span>
         </div>
 
-        <!-- 3D Vector Particle Cloud Radar Box -->
-        <div class="radar-viewport" id="radar-viewport">
-          <canvas id="threejs-canvas"></canvas>
-          <div class="hud-brackets-overlay">
-            <div class="hud-bracket br-tl"></div>
-            <div class="hud-bracket br-tr"></div>
-            <div class="hud-bracket br-bl"></div>
-            <div class="hud-bracket br-br"></div>
-            <div class="crosshair-h"></div>
-            <div class="crosshair-v"></div>
-            <span class="hud-marker-label marker-h">h</span>
-            <span class="hud-marker-label marker-d">d</span>
+        <!-- 3-Part Brutalist Matrix Layout: Left Rail + Center Matrix + Right Stream -->
+        <div class="kraft-matrix-layout">
+          <!-- Left Geometric Brutalist Glyph Rail -->
+          <div class="rail-glyph-left">
+            <span>✦</span><span>✛</span><span>⁕</span><span>↑</span>
+            <span>↓</span><span>➔</span><span>⬡</span><span>❖</span>
+            <span>•</span><span>+</span><span>▲</span><span>▼</span>
+            <span>★</span><span>◎</span><span>✖</span><span>■</span>
+            <span>✦</span><span>✛</span><span>⁕</span><span>↑</span>
+          </div>
+
+          <!-- Exact 4-Column Monospace Matrix Table -->
+          <div class="matrix-table-viewport" id="matrix-scroll-body">
+            <!-- Populated dynamically with the exact 37 codes -->
+          </div>
+
+          <!-- Far-Right Continuous Telemetry Stream Rail (SIHURUPDMJOSDNTBPNLLN...) -->
+          <div class="rail-stream-right">
+            <div class="stream-char-flow" id="right-rail-stream">
+              <!-- Rendered via script -->
+            </div>
           </div>
         </div>
 
-        <!-- Real NOAA Telemetry Data Grid -->
-        <div class="telemetry-grid">
-          <div class="telemetry-cell">
-            <span>PHI <b id="val-phi">242°</b> &nbsp;VEL <b id="val-vel">438KM/S</b></span>
-            <span>DENS <b id="val-dens">10.3/P*</b> &nbsp;AMAG <b id="val-bt">4.2</b></span>
-            <span>SECTOR <b id="val-sector">F-88</b> &nbsp;BZ <b id="val-bz">-1.5nT</b></span>
-          </div>
-          <div class="telemetry-cell right">
-            <span>SECTOR B-78 &nbsp;RA 814250</span>
-            <span>AXIS TILT 006° &nbsp;ECC 0.22</span>
-            <span>CORE T 5.5M &nbsp;DUST 0.1</span>
-          </div>
-        </div>
-
-        <!-- Dual Monospace Telemetry Counters -->
-        <div class="token-metrics-row">
-          <span id="counter-used">54946886</span>
-          <span style="color: #333;">|</span>
-          <span id="counter-budget">36193353</span>
-        </div>
-        <div class="counter-legend">
-          <span>TOKENS CONSUMED (TODAY)</span>
-          <span>AVAILABLE CONTEXT BUDGET</span>
-        </div>
-
-        <!-- 20-Column Equalizer Matrix representing Token Quotas -->
-        <div class="matrix-chart-box" id="matrix-chart-box">
-          <!-- Populated dynamically via JS -->
-        </div>
-        <div class="matrix-legend-row">
-          <span style="color: var(--oled-cyan);">■ GEMINI (C1-7)</span>
-          <span style="color: var(--oled-amber);">■ CLAUDE (C8-14)</span>
-          <span style="color: var(--oled-green);">■ OPENAI (C15-20)</span>
-        </div>
-
-        <div class="sub-code-stamp">HXWA . NLO . 706 . UHL . MEX</div>
-
-        <div class="hex-matrix-feed" id="ascii-stream-box"></div>
-      </section>
-
-      <!-- =========================================================
-           SLIDE 1: KRAFT PAPER MATRIX MODE (RAW STREAM & TRANSACTIONS)
-           ========================================================= -->
-      <section class="handheld-device theme-kraft mobile-hidden" id="device-kraft" aria-label="Kraft Paper Weather Matrix">
-        <div class="dynamic-island"></div>
-
-        <div class="device-status-row" style="color: var(--kraft-dark);">
-          <span id="kraft-clock">18:05</span>
-          <span>ATMOS.TEL // WMO METAR</span>
-          <span id="loc-status">GPS:ONLINE</span>
-        </div>
-
-        <div class="kraft-header-bar">
-          <div class="kraft-title">THE WEATHER TERMINAL</div>
-          <div class="kraft-sub">ATMOS.TEL // 1013 HPA</div>
-        </div>
-
-        <div class="kraft-search-row">
-          <input type="text" class="kraft-input" id="kraft-search-field" placeholder="FILTER STATION / IATA..." autocomplete="off">
-          <button class="kraft-action-btn" id="btn-detect-gps" title="Query live weather at device geolocation">LOCATE ⌖</button>
-        </div>
-
-        <!-- High density matrix stream -->
-        <div class="kraft-stream-body">
-          <div class="kraft-glyph-rail">
-            <span>☼</span><span>▲</span><span>☁</span><span>·</span><span>⚡</span>
-            <span>▼</span><span>☂</span><span>≋</span><span>■</span><span>☼</span>
-            <span>▲</span><span>☁</span><span>·</span><span>⚡</span><span>▼</span>
-          </div>
-
-          <div class="kraft-data-center" id="kraft-station-list">
-            <!-- Populated dynamically via JS -->
-          </div>
-
-          <div class="kraft-glyph-rail rail-right">
-            <span>▼</span><span>⚡</span><span>·</span><span>☁</span><span>▲</span>
-            <span>☼</span><span>■</span><span>≋</span><span>☂</span><span>▼</span>
-            <span>⚡</span><span>·</span><span>☁</span><span>▲</span><span>☼</span>
-          </div>
-        </div>
-
-        <!-- 4-Column Alphanumeric Matrix Telemetry (Slide 1 match) -->
-        <div class="kraft-4col-grid" id="kraft-4col-grid">
-          <!-- Populated via script -->
-        </div>
-
-        <div class="kraft-footer-row">
+        <!-- Footer Bar with Export Tools -->
+        <div class="kraft-footer-bar">
           <span>HUMBLETEAM ● LAY</span>
-          <span>OPEN-METEO // SWPC</span>
+          <div class="kraft-export-actions">
+            <button class="btn-kraft-sm" onclick="exportFeed('raw')">COPY RAW</button>
+            <button class="btn-kraft-sm" onclick="exportFeed('csv')">CSV DUMP</button>
+          </div>
           <span>REG.784.OPN</span>
         </div>
       </section>
 
+      <!-- =========================================================
+           SLIDE 2: DARK OLED HUD MODE (SPACE WX REALTIME MONITOR)
+           ========================================================= -->
+      <section class="oled-card-face" id="view-oled">
+        <div class="oled-top-bar">
+          <span id="oled-clock">18:05 UTC</span>
+          <span>SPACE WX :: NOAA DSCOVR</span>
+          <span style="color: var(--oled-green);">● LIVE</span>
+        </div>
+
+        <div class="oled-title-bar">
+          <div class="oled-title-text">SPACE WX &nbsp;::</div>
+          <div class="oled-kp-pill" id="oled-kp-badge">Kp-05</div>
+        </div>
+
+        <!-- 3D Vector Particle Cloud Canvas -->
+        <div class="oled-radar-box" id="oled-radar-canvas-box">
+          <canvas id="threejs-canvas"></canvas>
+          <div class="hud-brackets-layer">
+            <div class="bracket-corner c-tl"></div>
+            <div class="bracket-corner c-tr"></div>
+            <div class="bracket-corner c-bl"></div>
+            <div class="bracket-corner c-br"></div>
+            <div class="cross-h"></div>
+            <div class="cross-v"></div>
+            <span class="hud-tag tag-h-pos">h</span>
+            <span class="hud-tag tag-d-pos">d</span>
+          </div>
+        </div>
+
+        <!-- Telemetry Data Grid -->
+        <div class="oled-telem-grid">
+          <div>
+            <div>PHI <b id="oled-phi">242°</b> &nbsp;VEL <b id="oled-vel">438KM/S</b></div>
+            <div>DENS <b id="oled-dens">10.3/P*</b> &nbsp;AMAG <b id="oled-bt">4.2</b></div>
+            <div>SECTOR <b>F-88</b> &nbsp;BZ <b id="oled-bz">-1.5nT</b></div>
+          </div>
+          <div style="text-align: right;">
+            <div>SECTOR B-78 &nbsp;RA 814250</div>
+            <div>AXIS TILT 006° &nbsp;ECC 0.22</div>
+            <div>CORE T 5.5M &nbsp;DUST 0.1</div>
+          </div>
+        </div>
+
+        <!-- Dual Monospace Telemetry Counters -->
+        <div class="oled-counters-row">
+          <span id="oled-cnt-used">54946886</span>
+          <span style="color: #333;">|</span>
+          <span id="oled-cnt-budget">36193353</span>
+        </div>
+
+        <!-- 20-Column Equalizer Matrix -->
+        <div class="oled-matrix-bars" id="oled-bars-container"></div>
+
+        <div class="oled-sub-stamp">HXWA . NLO . 706 . UHL . MEX</div>
+
+        <div class="oled-hex-feed" id="oled-ascii-feed"></div>
+      </section>
+
+      <!-- Ink-Stamped Aviation METAR Inspection Drawer -->
+      <div class="metar-drawer-backdrop" id="metar-drawer-modal">
+        <div class="metar-drawer-sheet">
+          <div class="drawer-header">
+            <div>
+              <span style="font-size: 8px; color: var(--kraft-ink-dim); display: block;">METAR TELEMETRY DECODER</span>
+              <span class="drawer-title" id="drawer-station-name">MP.UL.181.</span>
+            </div>
+            <span class="ink-stamp-badge" id="drawer-flight-rule">VFR</span>
+          </div>
+
+          <div class="metar-raw-box" id="drawer-raw-metar">
+            METAR LIMC 032120Z 04012KT 9999 FEW025 BKN080 17/11 Q1018 NOSIG
+          </div>
+
+          <div class="metar-param-grid">
+            <div class="param-line">
+              <span>WIND SPEED &amp; VORTEX</span>
+              <b id="drawer-wind">040° AT 12 KT</b>
+            </div>
+            <div class="param-line">
+              <span>BAROMETRIC ALTIMETER</span>
+              <b id="drawer-qnh">Q1018 hPa (30.06 inHg)</b>
+            </div>
+            <div class="param-line">
+              <span>SURFACE TEMPERATURE</span>
+              <b id="drawer-temp">17°C (DEWPOINT 11°C)</b>
+            </div>
+            <div class="param-line">
+              <span>HORIZONTAL VISIBILITY</span>
+              <b id="drawer-vis">&gt; 10 KM (CAVOK)</b>
+            </div>
+          </div>
+
+          <div class="drawer-footer-actions">
+            <span style="font-size: 8.5px; font-weight: 800;" id="drawer-fix-desc">AIRWAY FIX: NORTH QUADRANT</span>
+            <button class="btn-kraft-sm" onclick="closeMetarDrawer()">✕ CLOSE</button>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
-  <div class="cfg-drawer-overlay" id="cfg-overlay">
-    <div class="cfg-card">
-      <div class="cfg-card-title">
-        <span>SYSTEM CONFIG // BYOK VAULT</span>
-        <button class="nav-btn" onclick="closeCfgDrawer()">✕ ESC</button>
-      </div>
-
-      <div style="font-size: 8.5px; color: #777; margin-bottom: 14px; line-height: 1.4;">
-        Keys are stored strictly in client-side <b style="color:#aaa;">localStorage</b> on this device. No external proxies or relays.
-      </div>
-
-      <div class="cfg-input-group">
-        <label class="cfg-label">GOOGLE GEMINI API KEY</label>
-        <input type="password" class="cfg-field" id="cfg-gemini-key" placeholder="AIzaSy...">
-      </div>
-
-      <div class="cfg-input-group">
-        <label class="cfg-label">ANTHROPIC CLAUDE API KEY</label>
-        <input type="password" class="cfg-field" id="cfg-claude-key" placeholder="sk-ant-api03-...">
-      </div>
-
-      <div class="cfg-input-group">
-        <label class="cfg-label">OPENAI / CODEX API KEY</label>
-        <input type="password" class="cfg-field" id="cfg-openai-key" placeholder="sk-proj-...">
-      </div>
-
-      <div class="cfg-input-group">
-        <label class="cfg-label">TOTAL DAILY TOKEN BUDGET</label>
-        <input type="number" class="cfg-field" id="cfg-token-budget" placeholder="100000000" value="100000000">
-      </div>
-
-      <div class="cfg-actions">
-        <button class="nav-btn" onclick="simulateTokenBurst()">⚡ TEST BURST</button>
-        <button class="nav-btn" onclick="clearKeys()">WIPE KEYS</button>
-        <button class="nav-btn active" onclick="saveKeys()">SAVE TO STORAGE</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="toast-banner" id="toast">CONFIG UPDATED</div>
+  <!-- Notification Toast -->
+  <div class="toast-overlay" id="app-toast">COPIED TO CLIPBOARD</div>
 
   <script>
-    const STATE = {
-      view: 'oled', // 'oled', 'kraft', 'dual'
-      audioEnabled: false,
-      kp: 5,
-      vel: 438,
-      dens: 10.3,
-      bz: -1.5,
-      phi: 242,
-      bt: 4.2,
-      usedTokens: 54946886,
-      budgetTokens: 36193353,
-      geminiTokens: 18240000,
-      claudeTokens: 21450000,
-      openaiTokens: 15256886,
-      stations: [
-        { code: 'MXP', city: 'MILAN', lat: 45.63, lon: 8.72, temp: 18, hpa: 1016, wind: 'NNE 11', glyph: '☼' },
-        { code: 'LIN', city: 'LINATE', lat: 45.46, lon: 9.27, temp: 19, hpa: 1015, wind: 'NE 08', glyph: '☼' },
-        { code: 'FCO', city: 'ROME', lat: 41.80, lon: 12.24, temp: 21, hpa: 1014, wind: 'W 14', glyph: '☼' },
-        { code: 'JFK', city: 'NEW YORK', lat: 40.64, lon: -73.77, temp: 14, hpa: 1019, wind: 'NW 19', glyph: '☂' },
-        { code: 'LHR', city: 'LONDON', lat: 51.47, lon: -0.45, temp: 13, hpa: 1008, wind: 'SW 22', glyph: '☁' },
-        { code: 'SXF', city: 'BERLIN', lat: 52.36, lon: 13.50, temp: 12, hpa: 1012, wind: 'WNW 15', glyph: '≋' },
-        { code: 'HND', city: 'TOKYO', lat: 35.54, lon: 139.77, temp: 20, hpa: 1017, wind: 'ESE 09', glyph: '☼' },
-        { code: 'CDG', city: 'PARIS', lat: 49.00, lon: 2.55, temp: 15, hpa: 1013, wind: 'SSW 13', glyph: '☁' },
-        { code: 'KEF', city: 'REYKJAVIK', lat: 63.98, lon: -22.60, temp: 4, hpa: 998, wind: 'NE 34', glyph: '⚡' },
-        { code: 'DXB', city: 'DUBAI', lat: 25.25, lon: 55.36, temp: 33, hpa: 1011, wind: 'NNW 12', glyph: '☼' },
-        { code: 'SYD', city: 'SYDNEY', lat: -33.94, lon: 151.17, temp: 19, hpa: 1022, wind: 'SE 16', glyph: '☼' }
-      ]
-    };
+    /* =========================================================
+       1. DATASET: EXACT 37 CODES FROM SLIDE 1 (KRAFT MATRIX)
+       ========================================================= */
+    const MATRIX_DATA = [
+      { col1: "MP.",   col2: "UL.",  col3: "181.", col4: "I.G",  icao: "LIMC", name: "MILAN MALPENSA",  wind: "040° 12KT", qnh: "1018", temp: "17/11", vis: "> 10KM", rule: "VFR" },
+      { col1: "FLI.",  col2: "ISL.", col3: "291.", col4: "GN",   icao: "EHAM", name: "AMSTERDAM ISL",   wind: "220° 18KT", qnh: "1012", temp: "14/09", vis: "8000M",  rule: "VFR" },
+      { col1: "TXJ.",  col2: "HTK.", col3: "486.", col4: "ZEM",  icao: "EDDF", name: "FRANKFURT HUB",   wind: "190° 11KT", qnh: "1015", temp: "15/08", vis: "> 10KM", rule: "VFR" },
+      { col1: "DPB.",  col2: "RIJ.", col3: "473.", col4: "NO",   icao: "LFPG", name: "PARIS CHARLES",   wind: "280° 09KT", qnh: "1016", temp: "16/10", vis: "> 10KM", rule: "VFR" },
+      { col1: "LHT.",  col2: "TJW.", col3: "537.", col4: "VUO",  icao: "EGLL", name: "LONDON HEATHROW", wind: "240° 22KT", qnh: "1009", temp: "13/09", vis: "6000M",  rule: "MVFR" },
+      { col1: "QXPR.", col2: "HUD.", col3: "908.", col4: "XCC",  icao: "KJFK", name: "NEW YORK KENNEDY",wind: "310° 16KT", qnh: "1020", temp: "12/04", vis: "> 10KM", rule: "VFR" },
+      { col1: "EACA.", col2: "SXF.", col3: "892.", col4: "EOF",  icao: "EDDB", name: "BERLIN BRANDENBURG", wind: "260° 14KT", qnh: "1013", temp: "13/06", vis: "> 10KM", rule: "VFR" },
+      { col1: "NYHE.", col2: "JED.", col3: "024.", col4: "UET",  icao: "OEJN", name: "JEDDAH INTL",     wind: "340° 08KT", qnh: "1011", temp: "32/19", vis: "> 10KM", rule: "VFR" },
+      { col1: "NTSG.", col2: "KOP.", col3: "290.", col4: "UYE",  icao: "EFHK", name: "HELSINKI VANTAA", wind: "020° 15KT", qnh: "1005", temp: "06/02", vis: "> 10KM", rule: "VFR" },
+      { col1: "NAIA.", col2: "CRT.", col3: "784.", col4: "BKQ",  icao: "RPLL", name: "MANILA NINOY",    wind: "090° 07KT", qnh: "1008", temp: "29/24", vis: "5000M",  rule: "MVFR" },
+      { col1: "FISH.", col2: "KER.", col3: "486.", col4: "XCC",  icao: "BIKF", name: "KEFLAVIK REYKJAVIK",wind: "060° 34KT", qnh: "994",  temp: "03/-01",vis: "3500M",  rule: "IFR" },
+      { col1: "CZPG.", col2: "MUP.", col3: "920.", col4: "OPN",  icao: "CYYZ", name: "TORONTO PEARSON", wind: "270° 13KT", qnh: "1017", temp: "11/03", vis: "> 10KM", rule: "VFR" },
+      { col1: "SFUA.", col2: "BUM.", col3: "176.", col4: "UTI",  icao: "KSFO", name: "SAN FRANCISCO",   wind: "290° 20KT", qnh: "1014", temp: "15/11", vis: "> 10KM", rule: "VFR" },
+      { col1: "LGXP.", col2: "FSZ.", col3: "683.", col4: "TKN",  icao: "RJAA", name: "TOKYO NARITA",    wind: "140° 10KT", qnh: "1019", temp: "19/14", vis: "> 10KM", rule: "VFR" },
+      { col1: "SKAQ.", col2: "UIF.", col3: "840.", col4: "OWZ",  icao: "ESSA", name: "STOCKHOLM ARLANDA",wind: "360° 12KT", qnh: "1007", temp: "07/01", vis: "> 10KM", rule: "VFR" },
+      { col1: "LJAO.", col2: "XTP.", col3: "260.", col4: "IQP",  icao: "LOWW", name: "VIENNA SCHWECHAT",wind: "300° 15KT", qnh: "1016", temp: "15/07", vis: "> 10KM", rule: "VFR" },
+      { col1: "ATQW.", col2: "SZH.", col3: "659.", col4: "NJP",  icao: "LSZH", name: "ZURICH AIRPORT",  wind: "050° 06KT", qnh: "1021", temp: "16/09", vis: "> 10KM", rule: "VFR" },
+      { col1: "CYUH.", col2: "LQM.", col3: "828.", col4: "ROD",  icao: "CYUL", name: "MONTREAL TRUDEAU",wind: "230° 11KT", qnh: "1018", temp: "10/02", vis: "> 10KM", rule: "VFR" },
+      { col1: "OJBU.", col2: "RIS.", col3: "180.", col4: "FGE",  icao: "OJAI", name: "AMMAN ALIA",      wind: "280° 12KT", qnh: "1014", temp: "22/12", vis: "> 10KM", rule: "VFR" },
+      { col1: "FAUU.", col2: "LBO.", col3: "244.", col4: "POK",  icao: "FAOR", name: "JOHANNESBURG OR", wind: "170° 09KT", qnh: "1024", temp: "18/06", vis: "> 10KM", rule: "VFR" },
+      { col1: "YRUE.", col2: "IRX.", col3: "252.", col4: "CFE",  icao: "YSSY", name: "SYDNEY KINGFORD", wind: "150° 17KT", qnh: "1023", temp: "18/12", vis: "> 10KM", rule: "VFR" },
+      { col1: "FAUL.", col2: "YEH.", col3: "090.", col4: "HAT",  icao: "FACT", name: "CAPE TOWN INTL",  wind: "190° 24KT", qnh: "1018", temp: "16/10", vis: "> 10KM", rule: "VFR" },
+      { col1: "ZQXD.", col2: "QUB.", col3: "125.", col4: "BNB",  icao: "EGAA", name: "BELFAST ALDERGROVE",wind: "220° 19KT",qnh: "1006", temp: "12/08", vis: "7000M",  rule: "VFR" },
+      { col1: "IFLT.", col2: "NUP.", col3: "464.", col4: "BOU",  icao: "LEMD", name: "MADRID BARAJAS",  wind: "030° 08KT", qnh: "1019", temp: "21/08", vis: "> 10KM", rule: "VFR" },
+      { col1: "BAHL.", col2: "AIY.", col3: "015.", col4: "OGP",  icao: "OMDB", name: "DUBAI INTL",      wind: "320° 14KT", qnh: "1010", temp: "34/21", vis: "> 10KM", rule: "VFR" },
+      { col1: "EYTW.", col2: "RTE.", col3: "863.", col4: "NUG",  icao: "EYVI", name: "VILNIUS AIRPORT", wind: "270° 10KT", qnh: "1011", temp: "09/04", vis: "> 10KM", rule: "VFR" },
+      { col1: "URZP.", col2: "NUY.", col3: "690.", col4: "BFS",  icao: "EPWA", name: "WARSAW CHOPIN",   wind: "250° 13KT", qnh: "1014", temp: "12/05", vis: "> 10KM", rule: "VFR" },
+      { col1: "JBJF.", col2: "JEM.", col3: "572.", col4: "KSP",  icao: "SBGL", name: "RIO DE JANEIRO",  wind: "140° 10KT", qnh: "1017", temp: "26/19", vis: "> 10KM", rule: "VFR" },
+      { col1: "OBSP.", col2: "OHT.", col3: "348.", col4: "JGW",  icao: "SBGR", name: "SAO PAULO GUARULHOS",wind: "160° 12KT",qnh: "1020", temp: "22/15", vis: "> 10KM", rule: "VFR" },
+      { col1: "JYYB.", col2: "OMJ.", col3: "590.", col4: "HTJ",  icao: "VHHH", name: "HONG KONG INTL",  wind: "080° 16KT", qnh: "1012", temp: "28/22", vis: "> 10KM", rule: "VFR" },
+      { col1: "UWM.",  col2: "NMS.", col3: "183.", col4: "IAI",  icao: "WSSS", name: "SINGAPORE CHANGI",wind: "060° 08KT", qnh: "1009", temp: "30/25", vis: "5000M",  rule: "MVFR" },
+      { col1: "DRH.",  col2: "CEB.", col3: "981.", col4: "OUC",  icao: "RPVM", name: "CEBU MACTAN",     wind: "050° 11KT", qnh: "1008", temp: "29/24", vis: "> 10KM", rule: "VFR" },
+      { col1: "UTO.",  col2: "KYG.", col3: "316.", col4: "LOM",  icao: "UAAA", name: "ALMATY AIRPORT",  wind: "180° 05KT", qnh: "1022", temp: "14/04", vis: "> 10KM", rule: "VFR" },
+      { col1: "KUK.",  col2: "IDO.", col3: "024.", col4: "UBI",  icao: "NZAA", name: "AUCKLAND AIRPORT",wind: "230° 19KT", qnh: "1015", temp: "15/10", vis: "> 10KM", rule: "VFR" },
+      { col1: "UC.",   col2: "JPY.", col3: "135.", col4: "KSS",  icao: "RKSI", name: "SEOUL INCHEON",   wind: "320° 12KT", qnh: "1021", temp: "16/06", vis: "> 10KM", rule: "VFR" },
+      { col1: "MZG.",  col2: "WLM.", col3: "419.", col4: "ZYF",  icao: "LTFM", name: "ISTANBUL AIRPORT",wind: "040° 17KT", qnh: "1017", temp: "19/12", vis: "> 10KM", rule: "VFR" },
+      { col1: "ZAA.",  col2: "POL.", col3: "502.", col4: "QWP",  icao: "EBBR", name: "BRUSSELS NATIONAL",wind: "240° 14KT", qnh: "1013", temp: "15/09", vis: "> 10KM", rule: "VFR" }
+    ];
 
-    let audioContext = null;
-    function playBeep(freq = 1000, duration = 0.03, type = 'square') {
-      if (!STATE.audioEnabled) return;
+    // Right Rail exact character stream from original screenshot
+    const RIGHT_RAIL_CHARS = "SIHURUPDMJOSDNTBPNLLNHXWANLOUHLMEX".split('');
+
+    let audioEnabled = true;
+    let audioCtx = null;
+
+    function playTactileClick(freq = 1200, duration = 0.02) {
+      if (!audioEnabled) return;
       try {
-        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioContext.state === 'suspended') audioContext.resume();
-        const osc = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioContext.currentTime);
-        gain.gain.setValueAtTime(0.035, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
         osc.connect(gain);
-        gain.connect(audioContext.destination);
+        gain.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioContext.currentTime + duration);
-      } catch (err) {}
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
     }
 
-    function toggleWebAudio() {
-      STATE.audioEnabled = !STATE.audioEnabled;
-      const btn = document.getElementById('btn-audio');
-      btn.textContent = STATE.audioEnabled ? 'SND:ON' : 'SND:OFF';
-      btn.style.color = STATE.audioEnabled ? 'var(--oled-green)' : '#aaa';
-      if (STATE.audioEnabled) playBeep(1400, 0.05);
+    function toggleAudioSynthesis() {
+      audioEnabled = !audioEnabled;
+      const btn = document.getElementById('btn-audio-toggle');
+      btn.textContent = audioEnabled ? 'SND:ON' : 'SND:OFF';
+      btn.style.color = audioEnabled ? '#e6e2d8' : '#777';
+      if (audioEnabled) playTactileClick(1500, 0.04);
     }
 
-    const devOled = document.getElementById('device-oled');
-    const devKraft = document.getElementById('device-kraft');
-    const btnOled = document.getElementById('btn-mode-oled');
-    const btnKraft = document.getElementById('btn-mode-kraft');
-    const btnDual = document.getElementById('btn-mode-dual');
+    /* =========================================================
+       2. MATRIX RENDERER & SEARCH FILTERING
+       ========================================================= */
+    const matrixContainer = document.getElementById('matrix-scroll-body');
+    const searchInput = document.getElementById('matrix-search-box');
+    const matchCounter = document.getElementById('match-counter');
 
-    function setAppView(mode) {
-      STATE.view = mode;
-      btnOled.classList.toggle('active', mode === 'oled');
-      btnKraft.classList.toggle('active', mode === 'kraft');
-      btnDual.classList.toggle('active', mode === 'dual');
+    function highlightText(text, query) {
+      if (!query) return text;
+      const regex = new RegExp(`(${query})`, 'gi');
+      return text.replace(regex, '<span class="match-char">$1</span>');
+    }
 
-      if (mode === 'oled') {
-        devOled.classList.remove('mobile-hidden');
-        devOled.style.display = 'flex';
-        devKraft.classList.add('mobile-hidden');
-        devKraft.style.display = 'none';
-      } else if (mode === 'kraft') {
-        devKraft.classList.remove('mobile-hidden');
-        devKraft.style.display = 'flex';
-        devOled.classList.add('mobile-hidden');
-        devOled.style.display = 'none';
-      } else { // dual
-        devOled.classList.remove('mobile-hidden');
-        devOled.style.display = 'flex';
-        devKraft.classList.remove('mobile-hidden');
-        devKraft.style.display = 'flex';
+    function renderMatrixTable(filter = '') {
+      matrixContainer.innerHTML = '';
+      const q = filter.trim().toUpperCase();
+      let matchedCount = 0;
+
+      MATRIX_DATA.forEach((row, idx) => {
+        const fullRowText = `${row.col1} ${row.col2} ${row.col3} ${row.col4} ${row.name} ${row.icao}`;
+        const isMatch = !q || fullRowText.toUpperCase().includes(q);
+
+        if (isMatch) {
+          matchedCount++;
+          const rowElem = document.createElement('div');
+          rowElem.className = 'matrix-row' + (q ? ' highlighted' : '');
+          rowElem.innerHTML = `
+            <div class="col-fix">${highlightText(row.col1, q)}</div>
+            <div class="col-way">${highlightText(row.col2, q)}</div>
+            <div class="col-met">${highlightText(row.col3, q)}</div>
+            <div class="col-flg">${highlightText(row.col4, q)}</div>
+          `;
+          rowElem.addEventListener('click', () => {
+            playTactileClick(900, 0.03);
+            openMetarDrawer(row);
+          });
+          matrixContainer.appendChild(rowElem);
+        }
+      });
+
+      matchCounter.textContent = `${matchedCount}/${MATRIX_DATA.length}`;
+    }
+
+    // Populate Right Rail Stream
+    const rightRailContainer = document.getElementById('right-rail-stream');
+    RIGHT_RAIL_CHARS.forEach(char => {
+      const span = document.createElement('span');
+      span.textContent = char;
+      rightRailContainer.appendChild(span);
+    });
+
+    // Realtime Search Listener with tactile typing clicks
+    searchInput.addEventListener('input', (e) => {
+      playTactileClick(1400, 0.015);
+      renderMatrixTable(e.target.value);
+    });
+
+    renderMatrixTable();
+
+    /* =========================================================
+       3. INK-STAMPED METAR DECODER DRAWER
+       ========================================================= */
+    const drawerModal = document.getElementById('metar-drawer-modal');
+
+    function openMetarDrawer(item) {
+      document.getElementById('drawer-station-name').textContent = `${item.col1} ${item.col2} ${item.col3} ${item.col4}`;
+      document.getElementById('drawer-raw-metar').textContent = `METAR ${item.icao} 032120Z ${item.wind.replace(' ', '')} 9999 FEW025 BKN080 ${item.temp} Q${item.qnh} NOSIG`;
+      document.getElementById('drawer-wind').textContent = item.wind;
+      document.getElementById('drawer-qnh').textContent = `Q${item.qnh} hPa (${(item.qnh * 0.02953).toFixed(2)} inHg)`;
+      document.getElementById('drawer-temp').textContent = `${item.temp.split('/')[0]}°C (DEW ${item.temp.split('/')[1]}°C)`;
+      document.getElementById('drawer-vis').textContent = item.vis;
+      document.getElementById('drawer-fix-desc').textContent = `${item.name} // FIX REF: ${item.col2}`;
+
+      const ruleBadge = document.getElementById('drawer-flight-rule');
+      ruleBadge.textContent = item.rule;
+      ruleBadge.className = 'ink-stamp-badge' + (item.rule === 'IFR' ? ' ifr' : '');
+
+      drawerModal.classList.add('active');
+    }
+
+    function closeMetarDrawer() {
+      playTactileClick(800, 0.02);
+      drawerModal.classList.remove('active');
+    }
+
+    drawerModal.addEventListener('click', (e) => {
+      if (e.target === drawerModal) closeMetarDrawer();
+    });
+
+    /* =========================================================
+       4. GPS COORDINATE LOCK
+       ========================================================= */
+    function acquireDeviceCoordinates() {
+      const display = document.getElementById('gps-coords-display');
+      const btn = document.getElementById('btn-lock-gps');
+      playTactileClick(1600, 0.04);
+
+      if (!navigator.geolocation) {
+        display.textContent = 'GPS NOT SUPPORTED';
+        showToast('GEOLOCATION API NOT AVAILABLE');
+        return;
       }
-      playBeep(880, 0.03);
-      if (typeof handleCanvasResize === 'function') handleCanvasResize();
+
+      btn.textContent = '[SEEKING...]';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude.toFixed(2);
+          const lon = pos.coords.longitude.toFixed(2);
+          const latDir = lat >= 0 ? '°N' : '°S';
+          const lonDir = lon >= 0 ? '°E' : '°W';
+          display.textContent = `LAT ${Math.abs(lat)}${latDir} LON ${Math.abs(lon)}${lonDir}`;
+          btn.textContent = '[LOCKED]';
+          showToast(`GPS LOCK: ${lat}, ${lon}`);
+          playTactileClick(1900, 0.05);
+        },
+        (err) => {
+          // Fallback to Milan coordinates
+          display.textContent = 'LAT 45.46°N LON 09.19°E';
+          btn.textContent = '[CACHED]';
+          showToast('GPS TIMEOUT: USING STATION DEFAULT');
+        },
+        { timeout: 8000 }
+      );
     }
 
-    if (window.innerWidth > 860) {
-      setAppView('dual');
-    } else {
-      setAppView('oled');
+    /* =========================================================
+       5. EXPORT / COPY UTILITIES
+       ========================================================= */
+    function showToast(msg) {
+      const toast = document.getElementById('app-toast');
+      toast.textContent = msg;
+      toast.classList.add('active');
+      setTimeout(() => toast.classList.remove('active'), 2000);
     }
 
-    function tickClocks() {
-      const now = new Date();
-      const h = String(now.getUTCHours()).padStart(2, '0');
-      const m = String(now.getUTCMinutes()).padStart(2, '0');
-      const s = String(now.getUTCSeconds()).padStart(2, '0');
-      document.getElementById('oled-clock').textContent = `${h}:${m}:${s} UTC`;
-      document.getElementById('kraft-clock').textContent = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    }
-    setInterval(tickClocks, 1000);
-    tickClocks();
+    function exportFeed(type) {
+      playTactileClick(1100, 0.03);
+      let text = '';
+      if (type === 'raw') {
+        text = MATRIX_DATA.map(d => `${d.col1.padEnd(6)} ${d.col2.padEnd(5)} ${d.col3.padEnd(5)} ${d.col4}`).join('\n');
+      } else {
+        text = 'PREFIX,WAYPOINT,METRIC,FLAG,ICAO,STATION\n' + MATRIX_DATA.map(d => `${d.col1},${d.col2},${d.col3},${d.col4},${d.icao},"${d.name}"`).join('\n');
+      }
 
-    const radarContainer = document.getElementById('radar-viewport');
+      const dummy = document.createElement('textarea');
+      dummy.value = text;
+      document.body.appendChild(dummy);
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+
+      showToast(`EXPORTED ${type.toUpperCase()} TO CLIPBOARD`);
+    }
+
+    /* =========================================================
+       6. THEME SWITCHING (KRAFT MATRIX <-> OLED HUD)
+       ========================================================= */
+    const viewKraft = document.getElementById('view-kraft');
+    const viewOled = document.getElementById('view-oled');
+    const btnKraft = document.getElementById('btn-kraft-view');
+    const btnOled = document.getElementById('btn-oled-view');
+
+    function switchTheme(theme) {
+      playTactileClick(1000, 0.03);
+      if (theme === 'kraft') {
+        viewKraft.style.display = 'flex';
+        viewOled.style.display = 'none';
+        btnKraft.classList.add('active');
+        btnOled.classList.remove('active');
+      } else {
+        viewKraft.style.display = 'none';
+        viewOled.style.display = 'flex';
+        btnKraft.classList.remove('active');
+        btnOled.classList.add('active');
+        if (typeof onOledActivated === 'function') onOledActivated();
+      }
+    }
+
+    /* =========================================================
+       7. THREE.JS 3D PARTICLE CLOUD (SLIDE 2 OLED HUD)
+       ========================================================= */
+    const radarBox = document.getElementById('oled-radar-canvas-box');
     const canvas = document.getElementById('threejs-canvas');
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-    renderer.setSize(radarContainer.clientWidth, radarContainer.clientHeight);
+    renderer.setSize(radarBox.clientWidth, radarBox.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, radarContainer.clientWidth / radarContainer.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(45, radarBox.clientWidth / radarBox.clientHeight, 0.1, 1000);
     camera.position.z = 240;
 
-    const count = 2100;
+    const particleCount = 2000;
     const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(count * 3);
+    const posArr = new Float32Array(particleCount * 3);
 
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < particleCount; i++) {
       const u = Math.random();
       const v = Math.random();
       const theta = u * 2.0 * Math.PI;
       const phi = Math.acos(2.0 * v - 1.0);
-      const r = Math.cbrt(Math.random()) * 66;
-
-      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      positions[i * 3 + 2] = r * Math.cos(phi);
+      const r = Math.cbrt(Math.random()) * 65;
+      posArr[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      posArr[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      posArr[i * 3 + 2] = r * Math.cos(phi);
     }
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
 
     const material = new THREE.PointsMaterial({
-      color: 0xd2d2d2,
+      color: 0xcccccc,
       size: 1.7,
       transparent: true,
-      opacity: 0.88
+      opacity: 0.85
     });
 
-    const particleCloud = new THREE.Points(geometry, material);
-    scene.add(particleCloud);
+    const particleSphere = new THREE.Points(geometry, material);
+    scene.add(particleSphere);
 
-    // Wireframe center core
-    const wireCore = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(42, 1),
-      new THREE.MeshBasicMaterial({ color: 0x333333, wireframe: true, transparent: true, opacity: 0.25 })
-    );
-    scene.add(wireCore);
+    // Draggable Touch & Mouse Rotation
+    let dragging = false;
+    let prevX = 0, prevY = 0;
 
-    let isDragging = false;
-    let lastX = 0;
-    let lastY = 0;
-
-    radarContainer.addEventListener('pointerdown', (e) => {
-      isDragging = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      playBeep(650, 0.02, 'sine');
+    radarBox.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      prevX = e.clientX;
+      prevY = e.clientY;
+      playTactileClick(600, 0.02);
     });
 
     window.addEventListener('pointermove', (e) => {
-      if (!isDragging) return;
-      const dx = e.clientX - lastX;
-      const dy = e.clientY - lastY;
-      particleCloud.rotation.y += dx * 0.007;
-      particleCloud.rotation.x += dy * 0.007;
-      wireCore.rotation.y += dx * 0.007;
-      wireCore.rotation.x += dy * 0.007;
-      lastX = e.clientX;
-      lastY = e.clientY;
+      if (!dragging) return;
+      const dx = e.clientX - prevX;
+      const dy = e.clientY - prevY;
+      particleSphere.rotation.y += dx * 0.007;
+      particleSphere.rotation.x += dy * 0.007;
+      prevX = e.clientX;
+      prevY = e.clientY;
     });
 
-    window.addEventListener('pointerup', () => { isDragging = false; });
-    window.addEventListener('pointercancel', () => { isDragging = false; });
+    window.addEventListener('pointerup', () => { dragging = false; });
 
-    function animateRadar() {
-      requestAnimationFrame(animateRadar);
-      if (!isDragging) {
-        particleCloud.rotation.y += 0.003;
-        particleCloud.rotation.x += 0.0012;
-        wireCore.rotation.y += 0.003;
-        wireCore.rotation.x += 0.0012;
+    function animateOledRadar() {
+      requestAnimationFrame(animateOledRadar);
+      if (!dragging) {
+        particleSphere.rotation.y += 0.003;
+        particleSphere.rotation.x += 0.001;
       }
       renderer.render(scene, camera);
     }
-    animateRadar();
+    animateOledRadar();
 
-    function handleCanvasResize() {
-      if (!radarContainer || !renderer) return;
-      const w = radarContainer.clientWidth;
-      const h = radarContainer.clientHeight;
-      if (w === 0 || h === 0) return;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    }
-    window.addEventListener('resize', handleCanvasResize);
-
-    const chartBox = document.getElementById('matrix-chart-box');
-    const colsTotal = 20;
-    const rowsTotal = 12;
-    const chartGrid = [];
-
-    const baseProfile = [2, 3, 4, 3, 5, 8, 10, 6, 4, 3, 5, 7, 9, 11, 8, 5, 3, 2, 2, 1];
-
-    for (let c = 0; c < colsTotal; c++) {
-      const col = document.createElement('div');
-      col.className = 'matrix-col';
-      const cellStack = [];
-
-      for (let r = 0; r < rowsTotal; r++) {
-        const cell = document.createElement('div');
-        cell.className = 'matrix-cell';
-        col.appendChild(cell);
-        cellStack.push(cell);
-      }
-      chartBox.appendChild(col);
-      chartGrid.push(cellStack);
-
-      col.addEventListener('click', () => {
-        let provider = c < 7 ? 'GEMINI' : c < 14 ? 'CLAUDE' : 'OPENAI';
-        showToast(`COL #${c+1} // ${provider} CONTEXT BUFFER LOAD`);
-        playBeep(1100, 0.04);
-      });
-    }
-
-    function updateMatrixEqualizer(heights) {
-      for (let c = 0; c < colsTotal; c++) {
-        const activeLevel = Math.min(rowsTotal, Math.max(1, Math.round(heights[c] || 2)));
-        for (let r = 0; r < rowsTotal; r++) {
-          const cell = chartGrid[c][r];
-          if (r < activeLevel) {
-            if (STATE.kp >= 5 && r >= 9) {
-              cell.className = 'matrix-cell active-storm';
-            } else if (c < 7) {
-              cell.className = 'matrix-cell active-gemini';
-            } else if (c < 14) {
-              cell.className = 'matrix-cell active-claude';
-            } else {
-              cell.className = 'matrix-cell active-openai';
-            }
-          } else {
-            cell.className = 'matrix-cell';
-          }
-        }
+    function onOledActivated() {
+      const w = radarBox.clientWidth;
+      const h = radarBox.clientHeight;
+      if (w > 0 && h > 0) {
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
       }
     }
-    updateMatrixEqualizer(baseProfile);
+    window.addEventListener('resize', onOledActivated);
 
-    async function queryNOAAData() {
-      const badge = document.getElementById('noaa-badge');
-      const kpTag = document.getElementById('kp-badge');
+    /* =========================================================
+       8. OLED EQUALIZER & LIVE TELEMETRY
+       ========================================================= */
+    const barsContainer = document.getElementById('oled-bars-container');
+    const colsCount = 20;
+    const rowsCount = 12;
+    const baseLevels = [2, 3, 4, 3, 5, 8, 10, 6, 4, 3, 5, 7, 9, 11, 8, 5, 3, 2, 2, 1];
 
-      try {
-        // Planetary Kp
-        const kpRes = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
-        if (kpRes.ok) {
-          const kpArr = await kpRes.json();
-          if (kpArr && kpArr.length > 1) {
-            const latest = kpArr[kpArr.length - 1];
-            STATE.kp = Math.round(parseFloat(latest[1]));
-            kpTag.textContent = `Kp-${String(STATE.kp).padStart(2, '0')}`;
-            kpTag.classList.toggle('storm', STATE.kp >= 5);
-
-            const recentKp = kpArr.slice(-20).map(row => (parseFloat(row[1]) / 9) * rowsTotal);
-            if (recentKp.length === 20) updateMatrixEqualizer(recentKp);
-          }
-        }
-
-        // Plasma & Solar Wind
-        const plasmaRes = await fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-2-hour.json');
-        if (plasmaRes.ok) {
-          const plasmaArr = await plasmaRes.json();
-          for (let i = plasmaArr.length - 1; i > 0; i--) {
-            const [time, dens, speed] = plasmaArr[i];
-            if (speed && dens) {
-              STATE.vel = Math.round(speed);
-              STATE.dens = parseFloat(dens).toFixed(1);
-              document.getElementById('val-vel').textContent = `${STATE.vel}KM/S`;
-              document.getElementById('val-dens').textContent = `${STATE.dens}/P*`;
-              break;
-            }
-          }
-        }
-
-        // Magnetic IMF Bz
-        const magRes = await fetch('https://services.swpc.noaa.gov/products/solar-wind/mag-2-hour.json');
-        if (magRes.ok) {
-          const magArr = await magRes.json();
-          for (let i = magArr.length - 1; i > 0; i--) {
-            const [time, bx, by, bz, phi, lat, bt] = magArr[i];
-            if (bz !== null) {
-              STATE.bz = parseFloat(bz).toFixed(1);
-              STATE.phi = Math.round(phi);
-              STATE.bt = parseFloat(bt).toFixed(1);
-              document.getElementById('val-bz').textContent = `${STATE.bz}nT`;
-              document.getElementById('val-phi').textContent = `${STATE.phi}°`;
-              document.getElementById('val-bt').textContent = STATE.bt;
-              break;
-            }
-          }
-        }
-
-        badge.textContent = '● LIVE';
-        badge.style.color = 'var(--oled-green)';
-      } catch (err) {
-        badge.textContent = '○ CACHED';
-        badge.style.color = '#888';
-      }
-    }
-    queryNOAAData();
-    setInterval(queryNOAAData, 120000); // Poll every 2 minutes
-
-    const stationContainer = document.getElementById('kraft-station-list');
-    const searchField = document.getElementById('kraft-search-field');
-
-    function renderKraftStations(filter = '') {
-      stationContainer.innerHTML = '';
-      const q = filter.trim().toUpperCase();
-      const items = STATE.stations.filter(s => s.code.includes(q) || s.city.includes(q));
-
-      if (items.length === 0) {
-        stationContainer.innerHTML = `<div style="padding:10px; color:#555;">NO STATIONS MATCHING "${q}"</div>`;
-        return;
-      }
-
-      items.forEach(st => {
-        const row = document.createElement('div');
-        row.className = 'kraft-row-item';
-        row.innerHTML = `
-          <div><b style="color:#000;">${st.code}</b> <span style="font-size:8px; color:#555;">${st.city.slice(0,6)}</span></div>
-          <div style="text-align:center;">${st.glyph}</div>
-          <div style="text-align:right; font-weight:900;">${st.temp > 0 ? '+' : ''}${st.temp}°C</div>
-          <div style="text-align:right; color:#555; font-size:8.5px;">${st.hpa}</div>
-          <div style="text-align:right; font-size:8.5px;">${st.wind}</div>
-        `;
-        row.addEventListener('click', () => {
-          showToast(`STATION ${st.code} // TELEMETRY SYNCED`);
-          playBeep(900, 0.03);
-        });
-        stationContainer.appendChild(row);
-      });
-    }
-    renderKraftStations();
-
-    searchField.addEventListener('input', (e) => renderKraftStations(e.target.value));
-
-    // Geolocation detection
-    document.getElementById('btn-detect-gps').addEventListener('click', () => {
-      const locLabel = document.getElementById('loc-status');
-      playBeep(1200, 0.04);
-
-      if (!navigator.geolocation) {
-        locLabel.textContent = 'GPS:NONE';
-        return;
-      }
-
-      locLabel.textContent = 'GPS:SEEKING';
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        locLabel.textContent = 'GPS:LOCK';
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        try {
-          const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,surface_pressure,wind_speed_10m`);
-          if (res.ok) {
-            const data = await res.json();
-            STATE.stations.unshift({
-              code: 'LOCAL',
-              city: 'MY GPS',
-              lat: lat,
-              lon: lon,
-              temp: Math.round(data.current.temperature_2m),
-              hpa: Math.round(data.current.surface_pressure),
-              wind: `${Math.round(data.current.wind_speed_10m)}KM/H`,
-              glyph: '⌖'
-            });
-            renderKraftStations(searchField.value);
-            showToast('GPS LOCAL STATION REGISTERED');
-          }
-        } catch (e) {}
-      }, () => {
-        locLabel.textContent = 'GPS:OFFLINE';
-      }, { timeout: 7000 });
-    });
-
-    // Populate 4-column Kraft raw codes (Slide 1 match)
-    const kraft4Col = document.getElementById('kraft-4col-grid');
-    const rawIdentifiers = [
-      'MP.UL.181.', 'FLI.ISL.291.', 'TXJ.HTK.486.', 'DPB.RIJ.473.',
-      'LHT.TJW.537.', 'XPR.HUD.908.', 'EACA.SXF.892.', 'NYHE.JED.024.',
-      'NTSG.KOP.290.', 'NAIA.CRT.784.', 'FISH.KER.486.', 'CZPG.MUP.920.',
-      'SFUA.BUM.176.', 'LGXP.FSZ.683.', 'SKAO.UIF.840.', 'LJAO.XTP.260.',
-      'ATQW.SZH.659.', 'CYUH.LQM.828.', 'QJBU.RIS.180.', 'FAUU.LBO.244.',
-      'GEMINI.TOK.125.', 'CLAUDE.CTX.464.', 'CODEX.REQ.015.', 'SWPC.MAG.863.'
-    ];
-
-    for (let c = 0; c < 4; c++) {
+    for (let c = 0; c < colsCount; c++) {
       const colDiv = document.createElement('div');
-      colDiv.className = 'kraft-col-block';
-      let s = '';
-      for (let r = 0; r < 6; r++) {
-        s += `<div>${rawIdentifiers[(c * 6 + r) % rawIdentifiers.length]}</div>`;
+      colDiv.className = 'oled-bar-col';
+      const threshold = baseLevels[c];
+
+      for (let r = 0; r < rowsCount; r++) {
+        const cell = document.createElement('div');
+        cell.className = 'oled-bar-cell';
+        if (r < threshold) {
+          if (c < 7) cell.classList.add('active-gemini');
+          else if (c < 14) cell.classList.add('active-claude');
+          else cell.classList.add('active-openai');
+        }
+        colDiv.appendChild(cell);
       }
-      colDiv.innerHTML = s;
-      kraft4Col.appendChild(colDiv);
+      barsContainer.appendChild(colDiv);
     }
 
-    const cfgOverlay = document.getElementById('cfg-overlay');
-    function openCfgDrawer() {
-      document.getElementById('cfg-gemini-key').value = localStorage.getItem('SWX_KEY_GEMINI') || '';
-      document.getElementById('cfg-claude-key').value = localStorage.getItem('SWX_KEY_CLAUDE') || '';
-      document.getElementById('cfg-openai-key').value = localStorage.getItem('SWX_KEY_OPENAI') || '';
-      document.getElementById('cfg-token-budget').value = localStorage.getItem('SWX_BUDGET') || '100000000';
-      cfgOverlay.classList.add('active');
-      playBeep(920, 0.04);
+    // Alphanumeric Hex Feed Bottom
+    const oledFeed = document.getElementById('oled-ascii-feed');
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.:;#-';
+    let rawStr = '';
+    for (let i = 0; i < 750; i++) rawStr += chars.charAt(Math.floor(Math.random() * chars.length));
+    oledFeed.textContent = rawStr;
+
+    // Realtime Clocks
+    function updateClockDisplay() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('kraft-clock').textContent = `${h}:${m}`;
+
+      const uh = String(now.getUTCHours()).padStart(2, '0');
+      const um = String(now.getUTCMinutes()).padStart(2, '0');
+      const us = String(now.getUTCSeconds()).padStart(2, '0');
+      document.getElementById('oled-clock').textContent = `${uh}:${um}:${us} UTC`;
     }
+    setInterval(updateClockDisplay, 1000);
+    updateClockDisplay();
 
-    function closeCfgDrawer() {
-      cfgOverlay.classList.remove('active');
-      playBeep(700, 0.03);
+    // Query NOAA Space Weather for OLED Mode
+    async function fetchNOAAData() {
+      try {
+        const res = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 1) {
+            const last = data[data.length - 1];
+            const kp = Math.round(parseFloat(last[1]));
+            const badge = document.getElementById('oled-kp-badge');
+            badge.textContent = `Kp-${String(kp).padStart(2, '0')}`;
+            badge.classList.toggle('storm', kp >= 5);
+          }
+        }
+      } catch (e) {}
     }
-
-    function saveKeys() {
-      localStorage.setItem('SWX_KEY_GEMINI', document.getElementById('cfg-gemini-key').value.trim());
-      localStorage.setItem('SWX_KEY_CLAUDE', document.getElementById('cfg-claude-key').value.trim());
-      localStorage.setItem('SWX_KEY_OPENAI', document.getElementById('cfg-openai-key').value.trim());
-      const b = parseInt(document.getElementById('cfg-token-budget').value) || 100000000;
-      localStorage.setItem('SWX_BUDGET', b);
-      STATE.budgetTokens = b;
-      document.getElementById('counter-budget').textContent = STATE.budgetTokens.toString();
-      closeCfgDrawer();
-      showToast('KEYS &amp; BUDGET SAVED TO LOCALSTORAGE');
-    }
-
-    function clearKeys() {
-      localStorage.removeItem('SWX_KEY_GEMINI');
-      localStorage.removeItem('SWX_KEY_CLAUDE');
-      localStorage.removeItem('SWX_KEY_OPENAI');
-      document.getElementById('cfg-gemini-key').value = '';
-      document.getElementById('cfg-claude-key').value = '';
-      document.getElementById('cfg-openai-key').value = '';
-      showToast('LOCAL STORAGE WIPED');
-      playBeep(500, 0.06);
-    }
-
-    function simulateTokenBurst() {
-      const burst = Math.floor(Math.random() * 45000 + 12000);
-      STATE.usedTokens += burst;
-      STATE.budgetTokens = Math.max(0, STATE.budgetTokens - burst);
-      document.getElementById('counter-used').textContent = STATE.usedTokens.toString();
-      document.getElementById('counter-budget').textContent = STATE.budgetTokens.toString();
-
-      // Equalizer reaction
-      const jittered = baseProfile.map(v => Math.min(rowsTotal, v + Math.floor(Math.random() * 4)));
-      updateMatrixEqualizer(jittered);
-      showToast(`SIMULATED BURST: +${burst} TOKENS`);
-      playBeep(1300, 0.08);
-    }
-
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.innerHTML = msg;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2200);
-    }
-
-    const asciiStreamBox = document.getElementById('ascii-stream-box');
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.:;#-';
-    let streamTxt = '';
-    for (let i = 0; i < 780; i++) {
-      streamTxt += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    asciiStreamBox.textContent = streamTxt;
-
-    const cntUsed = document.getElementById('counter-used');
-    const cntBudget = document.getElementById('counter-budget');
-
-    // Real-time micro-fluctuation cycle
-    setInterval(() => {
-      STATE.usedTokens += Math.floor(Math.random() * 7 - 3);
-      STATE.budgetTokens += Math.floor(Math.random() * 5 - 2);
-      cntUsed.textContent = STATE.usedTokens.toString();
-      cntBudget.textContent = STATE.budgetTokens.toString();
-
-      const profileFluct = baseProfile.map(v => Math.max(1, Math.min(rowsTotal, v + Math.floor(Math.random() * 3 - 1))));
-      updateMatrixEqualizer(profileFluct);
-    }, 1400);
+    fetchNOAAData();
+    setInterval(fetchNOAAData, 120000);
   </script>
 </body>
 </html>
-```
 ```
